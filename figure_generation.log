@@ -1,0 +1,69 @@
+0it [00:00, ?it/s]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff5.00_exp-3.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+1it [00:05,  5.58s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff5.00_exp-3.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+3it [00:10,  3.45s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff3.00_exp-2.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+5it [00:16,  3.12s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff3.00_exp-2.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+7it [00:22,  2.98s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff1.00_exp-1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+9it [00:27,  2.92s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff1.00_exp-1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+11it [00:33,  2.89s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+13it [00:39,  2.87s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bkw__max_t3.00__res_t0601__max_v6.28__res_v064.pth]...
+14it [00:44,  3.39s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+15it [00:50,  3.88s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bkw__max_t3.00__res_t0601__max_v6.28__res_v064.pth]...
+16it [00:55,  4.17s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.06_exp1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+17it [01:00,  4.45s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.06_exp1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+19it [01:06,  3.68s/it]20it [01:06,  3.30s/it]
+Figure generation jobs completed.
+32/GWANGJAE/PINN_for_FPL/generate_figures.py:123: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/generate_figures.py:125: SyntaxWarning: invalid escape sequence '\g'
+  title = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.06_exp1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
+19it [00:59,  3.80s/it]20it [00:59,  2.97s/it]
+Figure generation jobs completed.
