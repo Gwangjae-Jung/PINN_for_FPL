@@ -1,0 +1,10 @@
+CUDA_INDEX:     2
+
+
+VHS_COEFF:      1.0
+VHS_EXPONENT:   0.0
+INIT_TYPE:      'bimaxwellian'
+
+
+PATH_D:         'pretrained_operators/base_op_D__FPL3D__gamma0.0__res032.pth'
+PATH_F:         'pretrained_operators/base_op_F__FPL3D__gamma0.0__res032.pth'

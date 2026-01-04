@@ -1,0 +1,10 @@
+CUDA_INDEX:     2
+
+
+VHS_COEFF:      0.3125
+VHS_EXPONENT:   0.0
+INIT_TYPE:      'bkw'
+
+
+PATH_D:         'pretrained_operators/op_D__bkw__FPL2D__gamma0.0__res064__seed0.pth'
+PATH_F:         'pretrained_operators/op_F__bkw__FPL2D__gamma0.0__res064__seed0.pth'
