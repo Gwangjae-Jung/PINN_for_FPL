@@ -1,7 +1,9 @@
+import  warnings
 import  argparse
 from    itertools   import  product
 from    tqdm        import  tqdm
 import  subprocess
+warnings.filterwarnings("ignore")
 
 
 LIST_GAMMA      = [-3.0+k for k in range(5)]

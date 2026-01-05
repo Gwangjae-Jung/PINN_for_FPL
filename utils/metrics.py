@@ -72,7 +72,7 @@ def compute_bulk_velocity(f: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     v = v.reshape(*f.shape[1:], dimension)
     dv = (v[1]-v[0]).norm().pow(dimension).item()
     f = f.unsqueeze(-1)
-    mass_velocity = (f*v).sum(dim=tuple(range(1, ndim+1))) * dv
+    mass_velocity = (f*v).sum(dim=tuple(range(1, ndim))) * dv
     return mass_velocity
 
 

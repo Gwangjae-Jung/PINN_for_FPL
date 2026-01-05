@@ -19,7 +19,7 @@ from    config.base_config__2d      import  *
 from    config                      import  FurtherConfig
 
 
-warnings.filterwarnings("ignore", category=SyntaxWarning)
+warnings.filterwarnings("ignore")
 
 
 parser = argparse.ArgumentParser()
@@ -126,6 +126,7 @@ else:
     torch.save(target, path_solution)
     print(f"\tSaved the solution at [{str(path_solution)}].")
 v = v.cpu()
+t = grid_t.cpu()
 torch.cuda.empty_cache()
 
 
@@ -225,6 +226,8 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
 ##################################################
 def draw_snapshots(index: int, seed: int=0) -> tuple[plt.Figure, plt.Axes]:
     time_indices = [0, 200, 400, 600]
+    xy_ticks = [-max_v, 0, max_v]
+    xy_tick_labels = [f"{-max_v:.2f}", "0", f"{max_v:.2f}"]
     _cfg_imshow = {'origin': 'lower', 'extent': [-max_v, max_v, -max_v, max_v]}
     fig: plt.Figure
     axes: plt.Axes
@@ -233,9 +236,9 @@ def draw_snapshots(index: int, seed: int=0) -> tuple[plt.Figure, plt.Axes]:
     if init_type=='bkw':
         suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
     elif init_type=='maxwellian':
-        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     elif init_type=='bimaxwellian':
-        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
     
     axes[0, 0].set_ylabel("Ground truth",   fontsize=SIZE_TITLE, rotation=90)
@@ -249,8 +252,8 @@ def draw_snapshots(index: int, seed: int=0) -> tuple[plt.Figure, plt.Axes]:
         axes
     ax: plt.Axes
     for ax in axes.ravel():
-        ax.set_xticks((-max_v, max_v), (-max_v, max_v))
-        ax.set_yticks((-max_v, max_v), (-max_v, max_v))
+        ax.set_xticks(xy_ticks, xy_tick_labels)
+        ax.set_yticks(xy_ticks, xy_tick_labels)
     fig.tight_layout()
     return fig, axes
 
@@ -263,9 +266,9 @@ def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
     if init_type=='bkw':
         suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
     elif init_type=='maxwellian':
-        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     elif init_type=='bimaxwellian':
-        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
     axes[0].set_ylabel("Absolute $L^2$ error", fontsize=SIZE_TITLE)
     axes[1].set_ylabel("Relative $L^2$ error", fontsize=SIZE_TITLE)
@@ -279,24 +282,24 @@ def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
     # Absolute errors
     for seed, _c, abs_err__pinn, abs_err__oppinn in zip(LIST_SEEDS, LIST_COLORS, list_abs_errors__pinn, list_abs_errors__oppinn):
         axes[0].plot(
-            grid_t.cpu(), abs_err__pinn,
+            t, abs_err__pinn,
             linewidth=LINEWIDTH, color=_c,
             label=f"PINN (seed: {seed})",
         )
         axes[0].plot(
-            grid_t.cpu(), abs_err__oppinn,
+            t, abs_err__oppinn,
             linewidth=LINEWIDTH, color=_c, linestyle=':',
             label=f"opPINN (seed: {seed})",
         )
     # Relative errors
     for seed, _c, rel_err__pinn, rel_err__oppinn in zip(LIST_SEEDS, LIST_COLORS, list_rel_errors__pinn, list_rel_errors__oppinn):
         axes[1].plot(
-            grid_t.cpu(), rel_err__pinn,
+            t, rel_err__pinn,
             linewidth=LINEWIDTH, color=_c,
             label=f"PINN (seed: {seed})",
         )
         axes[1].plot(
-            grid_t.cpu(), rel_err__oppinn,
+            t, rel_err__oppinn,
             linewidth=LINEWIDTH, color=_c, linestyle=':',
             label=f"opPINN (seed: {seed})",
         )
@@ -312,7 +315,7 @@ def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
     return fig, axes
 
 
-def plot_quantities(index: int) -> tuple[plt.Figure, dict[str, plt.Axes]]:
+def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.Axes]]:
     layout = [
         ['density', 'vx'],
         ['density', 'vy'],
@@ -320,10 +323,49 @@ def plot_quantities(index: int) -> tuple[plt.Figure, dict[str, plt.Axes]]:
         ['energy',  'entropy'],
     ]
     fig, axd = plt.subplot_mosaic(layout, figsize=(10, 8), layout="constrained", sharex=True)
+    fig.suptitle(f"Physical Quantities\nTrained for {index} epochs", fontsize=SIZE_SUPTITLE)
+    xticks = tuple(range(int(max_t)+1))
     
-    axd['density'].plot(t, rho, color='black')
     axd['density'].set_title(r'Mass Density ($\rho$)')
-    axd['density'].set_ylabel(r'$\rho$')
+    axd['density'].plot(t, dict__mass__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
+    axd['density'].plot(t, dict__mass__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
+    axd['density'].plot(t, dict__mass__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['density'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
+    axd['density'].set_xticks(xticks, xticks)
+    
+    axd['vx'].set_title(r'Bulk Velocity ($v_x$)')
+    axd['vx'].plot(t, dict__momentum__target[(index, seed)][:, 0], 'k--', linewidth=3*LINEWIDTH, label='Target')
+    axd['vx'].plot(t, dict__momentum__oppinn[(index, seed)][:, 0], 'r-',  linewidth=LINEWIDTH, label='opPINN')
+    axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['vx'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
+    axd['vx'].set_xticks(xticks, xticks)
+    
+    axd['vy'].set_title(r'Bulk Velocity ($v_y$)')
+    axd['vy'].plot(t, dict__momentum__target[(index, seed)][:, 1], 'k--', linewidth=3*LINEWIDTH, label='Target')
+    axd['vy'].plot(t, dict__momentum__oppinn[(index, seed)][:, 1], 'r-',  linewidth=LINEWIDTH, label='opPINN')
+    axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['vy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
+    axd['vy'].set_xticks(xticks, xticks)
+    
+    axd['energy'].set_title(r'Energy Density ($E$)')
+    axd['energy'].plot(t, dict__energy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
+    axd['energy'].plot(t, dict__energy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
+    axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['energy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
+    axd['energy'].set_xticks(xticks, xticks)
+    
+    axd['entropy'].set_title(r'Entropy Density ($S$)')
+    axd['entropy'].plot(t, dict__entropy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
+    axd['entropy'].plot(t, dict__entropy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
+    axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['entropy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
+    axd['entropy'].set_xticks(xticks, xticks)
+    
+    handles, labels = axd['density'].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncols=3)
+
+    fig.tight_layout()
+    return fig, axd
 
 
 ##################################################
@@ -333,7 +375,7 @@ _cfg_savefig = {'dpi': DPI, 'bbox_inches': 'tight'}
 for index in LIST_INDEX:
     path_images = Path().cwd() / "images" / sample_t / get_prefix(index)
     if path_images.exists() is False:   path_images.mkdir(parents=True, exist_ok=True)
-    fig_snapshots, axes_snapshots = show_snapshots(index)
+    fig_snapshots, axes_snapshots = draw_snapshots(index)
     fig_errors, axes_errors = plot_error(index)
     fig_quantities, axes_quantities = plot_quantities(index)
     fig_snapshots.savefig(path_images/"snapshots.pdf", **_cfg_savefig)
