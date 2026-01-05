@@ -69,8 +69,8 @@ def compute_bulk_velocity(f: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     dimension = ndim-1
     assert v.size(-1) in [dimension, ndim]
     if v.size(-1)==ndim:    v = v[..., 1:]
-    v = v.reshape(*f.shape[1:], dimension)
     dv = (v[1]-v[0]).norm().pow(dimension).item()
+    v = v.reshape(*f.shape[1:], dimension)
     f = f.unsqueeze(-1)
     mass_velocity = (f*v).sum(dim=tuple(range(1, ndim))) * dv
     return mass_velocity
@@ -90,8 +90,8 @@ def compute_energy_density(f: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     dimension = ndim-1
     assert v.size(-1) in [dimension, ndim], f"{ndim=}"
     if v.size(-1)==ndim:    v = v[..., 1:]
-    v = v.reshape(*f.shape[1:], dimension)
     dv = (v[1]-v[0]).norm().pow(dimension).item()
+    v = v.reshape(*f.shape[1:], dimension)
     speed_squared = v.pow(2).sum(dim=-1)
     energy_density = (f*speed_squared).sum(dim=tuple(range(1, ndim))) * dv / 2
     return energy_density
