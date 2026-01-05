@@ -39,7 +39,7 @@ DENSITY = DENSITY__DICT[INIT_TYPE]
 
 print(f"Start training with seed {SEED}...")
 python_args = [
-    "python", "train_pinn.py",
+    "python", "train.py",
     
     "--seed",           str(SEED),
     "--cuda_index",     str(CUDA_INDEX),

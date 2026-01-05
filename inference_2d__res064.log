@@ -1,34 +1,0 @@
-0it [00:00, ?it/s]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-3.725290298461914e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff5.00_exp-3.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-1it [00:07,  7.05s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-3.725290298461914e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff5.00_exp-3.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-3it [00:14,  4.43s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-6.901288429617125e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff3.00_exp-2.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-5it [00:21,  4.01s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-6.901288429617125e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff3.00_exp-2.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-7it [00:28,  3.82s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-5.587935447692871e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff1.00_exp-1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-9it [00:35,  3.72s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-5.587935447692871e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff1.00_exp-1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-11it [00:42,  3.67s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-3.725290298461914e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-13it [00:49,  3.63s/it]Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bkw__max_t3.00__res_t0601__max_v6.28__res_v064.pth]...
-14it [00:56,  4.29s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-3.725290298461914e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-15it [01:03,  4.89s/it]Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.31_exp0.00__init_type_bkw__max_t3.00__res_t0601__max_v6.28__res_v064.pth]...
-16it [01:11,  5.41s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-6.51925802230835e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.06_exp1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-17it [01:18,  5.85s/it]/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/utils/metrics.py:121: UserWarning: Encountered a distribution function with negative values (min=-6.51925802230835e-09). Clipping to compute entropy density.
-  warnings.warn(f"Encountered a distribution function with negative values (min={_min}). Clipping to compute entropy density.")
-Loading the solution from [/media/junseung/47a90e46-3a9d-467c-bbee-066752b68532/GWANGJAE/PINN_for_FPL/solutions/vhs__coeff0.06_exp1.00__init_type_bimaxwellian__max_t3.00__res_t0601__max_v5.00__res_v064.pth]...
-19it [01:25,  4.93s/it]20it [01:25,  4.28s/it]
-Inference jobs completed.
