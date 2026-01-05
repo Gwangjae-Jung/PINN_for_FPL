@@ -323,7 +323,15 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
         ['energy',  'entropy'],
     ]
     fig, axd = plt.subplot_mosaic(layout, figsize=(10, 8), layout="constrained", sharex=True)
-    fig.suptitle(f"Physical Quantities\nTrained for {index} epochs", fontsize=SIZE_SUPTITLE)
+    suptitle: str
+    if init_type=='bkw':
+        suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='maxwellian':
+        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='bimaxwellian':
+        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
+    xlim = [0, max_t]
     xticks = tuple(range(int(max_t)+1))
     _limit_bulk_speed = 1e-2
     
@@ -333,7 +341,9 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['density'].plot(t, dict__mass__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['density'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['density'].set_xticks(xticks, xticks)
+    axd['density'].set_xlim(xlim)
     axd['density'].set_ylim(0.0, 2*dict__mass__target[(index, seed)].max().item())
+    axd['density'].grid(True)
     
     axd['vx'].set_title(r'Bulk Velocity ($v_x$)')
     axd['vx'].plot(t, dict__momentum__target[(index, seed)][:, 0], 'k--', linewidth=3*LINEWIDTH, label='Target')
@@ -341,7 +351,9 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vx'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['vx'].set_xticks(xticks, xticks)
+    axd['vx'].set_xlim(xlim)
     axd['vx'].set_ylim(-_limit_bulk_speed, _limit_bulk_speed)
+    axd['vx'].grid(True)
     
     axd['vy'].set_title(r'Bulk Velocity ($v_y$)')
     axd['vy'].plot(t, dict__momentum__target[(index, seed)][:, 1], 'k--', linewidth=3*LINEWIDTH, label='Target')
@@ -349,7 +361,9 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['vy'].set_xticks(xticks, xticks)
+    axd['vy'].set_xlim(xlim)
     axd['vy'].set_ylim(-_limit_bulk_speed, _limit_bulk_speed)
+    axd['vy'].grid(True)
     
     axd['energy'].set_title(r'Energy Density ($E$)')
     axd['energy'].plot(t, dict__energy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
@@ -357,7 +371,9 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['energy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['energy'].set_xticks(xticks, xticks)
+    axd['energy'].set_xlim(xlim)
     axd['energy'].set_ylim(0.0, 2*dict__energy__target[(index, seed)].max().item())
+    axd['energy'].grid(True)
     
     axd['entropy'].set_title(r'Entropy Density ($S$)')
     axd['entropy'].plot(t, dict__entropy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
@@ -365,12 +381,14 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['entropy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['entropy'].set_xticks(xticks, xticks)
+    axd['entropy'].set_xlim(xlim)
     _limit_max_entropy = dict__entropy__target[(index, seed)].max().item()
     _limit_min_entropy = dict__entropy__target[(index, seed)].min().item()
     _width_entropy = _limit_max_entropy-_limit_min_entropy
     _limit_max_entropy += _width_entropy
     _limit_min_entropy -= _width_entropy
     axd['entropy'].set_ylim(_limit_min_entropy, _limit_max_entropy)
+    axd['entropy'].grid(True)
     
     handles, labels = axd['density'].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncols=3)
