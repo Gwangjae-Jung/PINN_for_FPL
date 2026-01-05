@@ -28,7 +28,7 @@ for gamma, sample_t, res_t, res_v, init_type in tqdm(
     ):
     if init_type=='bkw' and gamma!=0.0: continue
     subprocess.run([
-        "python", "inference__main.py",
+        "python", "inference.py",
         "--cuda_index", str(cuda_index),
         "--gamma",      str(gamma),
         "--sample_t",   str(sample_t),

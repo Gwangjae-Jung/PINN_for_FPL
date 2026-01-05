@@ -18,3 +18,5 @@ pretrained_operators__density_1.0
 result/numerical**/**.pth
 **/**.ipynb
 **inference**.pth
+
+**.log
