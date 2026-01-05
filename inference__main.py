@@ -5,6 +5,7 @@ import  argparse
 import  warnings
 from    pathlib                 import  Path
 from    itertools               import  product
+import  matplotlib.pyplot       as      plt
 
 import  torch
 from    deep_numerical.utils    import  space_grid, relative_error
@@ -60,9 +61,7 @@ base_shape:     tuple[int, ...] = tuple((res_t, *(res_v for _ in range(DIMENSION
 config:         FurtherConfig   = FurtherConfig(f"./config/config__{DIMENSION}d__gamma{gamma:.1f}__{init_type}.yaml")
 
 path_base:      Path    = Path().cwd() / f"result__{sample_t}"
-path_images:    Path    = Path().cwd() / "images" / sample_t
 assert path_base.exists(), f"The path [{str(path_base)}] does not exist."
-if path_images.exists() is False:   path_images.mkdir(parents=True, exist_ok=True)
 
 vhs_coeff:      float   = config.vhs_coeff
 vhs_exponent:   float   = config.vhs_exponent
@@ -77,6 +76,9 @@ grid_t:         torch.Tensor    = torch.linspace(0, max_t, res_t)
 grid_v:         torch.Tensor    = space_grid(1, res_v, max_v).flatten()
 points  = torch.cartesian_prod(grid_t, *(grid_v for _ in range(DIMENSION)))
 v       = torch.cartesian_prod(*(grid_v for _ in range(DIMENSION)))
+
+dict__pred__pinn:           dict[tuple[int, int], torch.Tensor] = {}
+dict__pred__oppinn:         dict[tuple[int, int], torch.Tensor] = {}
 
 dict__abs_error__pinn:      dict[tuple[int, int], torch.Tensor] = {}
 dict__rel_error__pinn:      dict[tuple[int, int], torch.Tensor] = {}
@@ -138,8 +140,12 @@ def generate_pinn() -> PINN_FPL:
     )
 
 
+def get_prefix(index: int) -> str:
+    return f"{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exponent_{vhs_exponent:.2f}__init_type_{init_type}__index_{index}"
+
+
 ##################################################
-def validate_models(indices: list[int] = LIST_INDEX) -> None:
+def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
     for index, seed in product(indices, LIST_SEEDS):
         path_checkpoint__pinn = path_base / f"pinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}" / "checkpoints/"
         path_checkpoint__oppinn = path_base / f"oppinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}" / "checkpoints/"
@@ -186,34 +192,153 @@ def validate_models(indices: list[int] = LIST_INDEX) -> None:
         dict__momentum__oppinn[(index, seed)] = compute_bulk_velocity(pred_oppinn, v)
         dict__energy__oppinn[  (index, seed)] = compute_energy_density(pred_oppinn, v)
         dict__entropy__oppinn[ (index, seed)] = compute_entropy_density(pred_oppinn, v)
+        
+        # Save to the dictionaries
+        dict__pred__pinn[   (index, seed)] = pred_pinn
+        dict__pred__oppinn[ (index, seed)] = pred_oppinn
     
-    
-    torch.save(
-        {
-            'abs_error__pinn':        dict__abs_error__pinn,
-            'rel_error__pinn':        dict__rel_error__pinn,
-            'abs_error__oppinn':      dict__abs_error__oppinn,
-            'rel_error__oppinn':      dict__rel_error__oppinn,
-            'mass__pinn':             dict__mass__pinn,
-            'mass__oppinn':           dict__mass__oppinn,
-            'mass__target':           dict__mass__target,
-            'momentum__pinn':         dict__momentum__pinn,
-            'momentum__oppinn':       dict__momentum__oppinn,
-            'momentum__target':       dict__momentum__target,
-            'energy__pinn':           dict__energy__pinn,
-            'energy__oppinn':         dict__energy__oppinn,
-            'energy__target':         dict__energy__target,
-            'entropy__pinn':          dict__entropy__pinn,
-            'entropy__oppinn':        dict__entropy__oppinn,
-            'entropy__target':        dict__entropy__target,
-        },
-        path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent_{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
-    )
+    if save:
+        torch.save(
+            {
+                'abs_error__pinn':        dict__abs_error__pinn,
+                'rel_error__pinn':        dict__rel_error__pinn,
+                'abs_error__oppinn':      dict__abs_error__oppinn,
+                'rel_error__oppinn':      dict__rel_error__oppinn,
+                'mass__pinn':             dict__mass__pinn,
+                'mass__oppinn':           dict__mass__oppinn,
+                'mass__target':           dict__mass__target,
+                'momentum__pinn':         dict__momentum__pinn,
+                'momentum__oppinn':       dict__momentum__oppinn,
+                'momentum__target':       dict__momentum__target,
+                'energy__pinn':           dict__energy__pinn,
+                'energy__oppinn':         dict__energy__oppinn,
+                'energy__target':         dict__energy__target,
+                'entropy__pinn':          dict__entropy__pinn,
+                'entropy__oppinn':        dict__entropy__oppinn,
+                'entropy__target':        dict__entropy__target,
+            },
+            path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent_{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
+        )
     return None
 
 
 ##################################################
+def draw_snapshots(index: int, seed: int=0) -> tuple[plt.Figure, plt.Axes]:
+    time_indices = [0, 200, 400, 600]
+    _cfg_imshow = {'origin': 'lower', 'extent': [-max_v, max_v, -max_v, max_v]}
+    fig: plt.Figure
+    axes: plt.Axes
+    fig, axes = plt.subplots(3, len(time_indices), figsize=(10, 8), dpi=DPI, sharex=True, sharey=True)
+    suptitle: str
+    if init_type=='bkw':
+        suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='maxwellian':
+        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='bimaxwellian':
+        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
+    
+    axes[0, 0].set_ylabel("Ground truth",   fontsize=SIZE_TITLE, rotation=90)
+    axes[1, 0].set_ylabel("opPINN",         fontsize=SIZE_TITLE, rotation=90)
+    axes[2, 0].set_ylabel("PINN (ours)",    fontsize=SIZE_TITLE, rotation=90)
+    for c, idx_t in enumerate(time_indices):
+        axes[0, c].set_title(f"$t={grid_t[idx_t]:.1f}$", fontsize=SIZE_TITLE)
+        axes[0, c].imshow(target[idx_t], **_cfg_imshow)
+        axes[1, c].imshow(dict__pred__oppinn[(index, seed)][idx_t], **_cfg_imshow)
+        axes[2, c].imshow(dict__pred__pinn[(index, seed)][idx_t], **_cfg_imshow)
+        axes
+    ax: plt.Axes
+    for ax in axes.ravel():
+        ax.set_xticks((-max_v, max_v), (-max_v, max_v))
+        ax.set_yticks((-max_v, max_v), (-max_v, max_v))
+    fig.tight_layout()
+    return fig, axes
+
+
+def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
+    fig: plt.Figure
+    axes: plt.Axes
+    fig, axes = plt.subplots(2, 1, figsize=(10, 6), dpi=DPI, sharex=True)
+    suptitle: str
+    if init_type=='bkw':
+        suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='maxwellian':
+        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    elif init_type=='bimaxwellian':
+        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+    fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
+    axes[0].set_ylabel("Absolute $L^2$ error", fontsize=SIZE_TITLE)
+    axes[1].set_ylabel("Relative $L^2$ error", fontsize=SIZE_TITLE)
+    axes[-1].set_xlabel("$t$", fontsize=SIZE_TITLE)
+
+    list_abs_errors__pinn   = [dict__abs_error__pinn[  (index, _seed)] for _seed in LIST_SEEDS]
+    list_abs_errors__oppinn = [dict__abs_error__oppinn[(index, _seed)] for _seed in LIST_SEEDS]
+    list_rel_errors__pinn   = [dict__rel_error__pinn[  (index, _seed)] for _seed in LIST_SEEDS]
+    list_rel_errors__oppinn = [dict__rel_error__oppinn[(index, _seed)] for _seed in LIST_SEEDS]
+
+    # Absolute errors
+    for seed, _c, abs_err__pinn, abs_err__oppinn in zip(LIST_SEEDS, LIST_COLORS, list_abs_errors__pinn, list_abs_errors__oppinn):
+        axes[0].plot(
+            grid_t.cpu(), abs_err__pinn,
+            linewidth=LINEWIDTH, color=_c,
+            label=f"PINN (seed: {seed})",
+        )
+        axes[0].plot(
+            grid_t.cpu(), abs_err__oppinn,
+            linewidth=LINEWIDTH, color=_c, linestyle=':',
+            label=f"opPINN (seed: {seed})",
+        )
+    # Relative errors
+    for seed, _c, rel_err__pinn, rel_err__oppinn in zip(LIST_SEEDS, LIST_COLORS, list_rel_errors__pinn, list_rel_errors__oppinn):
+        axes[1].plot(
+            grid_t.cpu(), rel_err__pinn,
+            linewidth=LINEWIDTH, color=_c,
+            label=f"PINN (seed: {seed})",
+        )
+        axes[1].plot(
+            grid_t.cpu(), rel_err__oppinn,
+            linewidth=LINEWIDTH, color=_c, linestyle=':',
+            label=f"opPINN (seed: {seed})",
+        )
+
+    for ax in axes.ravel():
+        ax.set_xlim((0, max_t))
+        ax.set_yscale('log')
+        ax.grid(True)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncols=len(LIST_SEEDS))
+    fig.tight_layout()
+    return fig, axes
+
+
+def plot_quantities(index: int) -> tuple[plt.Figure, dict[str, plt.Axes]]:
+    layout = [
+        ['density', 'vx'],
+        ['density', 'vy'],
+        ['energy',  'entropy'],
+        ['energy',  'entropy'],
+    ]
+    fig, axd = plt.subplot_mosaic(layout, figsize=(10, 8), layout="constrained", sharex=True)
+    
+    axd['density'].plot(t, rho, color='black')
+    axd['density'].set_title(r'Mass Density ($\rho$)')
+    axd['density'].set_ylabel(r'$\rho$')
+
+
+##################################################
 validate_models()
+
+_cfg_savefig = {'dpi': DPI, 'bbox_inches': 'tight'}
+for index in LIST_INDEX:
+    path_images = Path().cwd() / "images" / sample_t / get_prefix(index)
+    if path_images.exists() is False:   path_images.mkdir(parents=True, exist_ok=True)
+    fig_snapshots, axes_snapshots = show_snapshots(index)
+    fig_errors, axes_errors = plot_error(index)
+    fig_quantities, axes_quantities = plot_quantities(index)
+    fig_snapshots.savefig(path_images/"snapshots.pdf", **_cfg_savefig)
+    fig_errors.savefig(path_images/"errors.pdf", **_cfg_savefig)
+    fig_quantities.savefig(path_images/"quantities.pdf", **_cfg_savefig)
 
 
 ##################################################
