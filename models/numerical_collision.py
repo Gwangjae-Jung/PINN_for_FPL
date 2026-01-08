@@ -40,6 +40,14 @@ class FPL_spectral():
     def fft_dim(self) -> tuple[int, ...]: return self.__fft_dim
     
     
+    def precompute(self) -> None:
+        """Precomputes the internal variables required for the fast spectral method.
+        This method should be called before using the `forward` or `solve` methods.
+        """
+        self.fsm.precompute()
+        return
+    
+    
     def forward(self, f: torch.Tensor) -> torch.Tensor:
         """
         Arguments:

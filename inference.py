@@ -4,8 +4,9 @@
 import  argparse
 import  warnings
 from    pathlib                 import  Path
-from    itertools               import  product
+from    itertools               import  accumulate, product
 import  matplotlib.pyplot       as      plt
+import  time
 
 import  torch
 from    deep_numerical.utils    import  space_grid, relative_error
@@ -29,6 +30,7 @@ parser.add_argument('--sample_t', type=str, help='The mod of sampling the time v
 parser.add_argument('--res_t', type=int, help='The resolution in the time variable.')
 parser.add_argument('--res_v', type=int, help='The resolution in the velocity variable.')
 parser.add_argument('--init_type', type=str, help='The initial condition.')
+parser.add_argument('--n_iter', type=int, default=2, help='Number of iterations for measuring elapsed time for each random seed. Note that the total number of iterations is the product of \'n_iter\' and the number of random seeds.')
 args = parser.parse_args()
 cuda_index: int     = args.cuda_index
 gamma:      float   = args.gamma
@@ -36,6 +38,7 @@ sample_t:   str     = args.sample_t
 res_t:      int     = args.res_t
 res_v:      int     = args.res_v
 init_type:  str     = args.init_type
+n_iter:     str     = args.n_iter
 
 DEVICE = torch.device(f'cuda:{cuda_index}')
 torch.set_default_device(DEVICE)
@@ -77,6 +80,7 @@ grid_v:         torch.Tensor    = space_grid(1, res_v, max_v).flatten()
 points  = torch.cartesian_prod(grid_t, *(grid_v for _ in range(DIMENSION)))
 v       = torch.cartesian_prod(*(grid_v for _ in range(DIMENSION)))
 
+# Key: index, seed
 dict__pred__pinn:           dict[tuple[int, int], torch.Tensor] = {}
 dict__pred__oppinn:         dict[tuple[int, int], torch.Tensor] = {}
 
@@ -98,11 +102,25 @@ dict__entropy__pinn:        dict[tuple[int, int], torch.Tensor] = {}
 dict__entropy__oppinn:      dict[tuple[int, int], torch.Tensor] = {}
 dict__entropy__target:      dict[tuple[int, int], torch.Tensor] = {}
 
+# Key: index
+dict__precompute_time:          dict[int, list[float]]  = {}
+dict__inference_time__pinn:     dict[int, list[float]]  = {}
+dict__inference_time__oppinn:   dict[int, list[float]]  = {}
+
+# Key: seed
+dict__train_time__pinn:         dict[int, torch.Tensor] = {}
+dict__train_time__oppinn:       dict[int, torch.Tensor] = {}
+dict__residual_loss__pinn:      dict[int, torch.Tensor] = {}
+dict__residual_loss__oppinn:    dict[int, torch.Tensor] = {}
+dict__initial_loss__pinn:       dict[int, torch.Tensor] = {}
+dict__initial_loss__oppinn:     dict[int, torch.Tensor] = {}
+
 
 ##################################################
 path_solution = path_base.parent / "solutions" / \
     f"vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__max_t{max_t:.2f}__res_t{res_t:04d}__max_v{max_v:.2f}__res_v{res_v:03d}.pth"
 path_solution.parent.mkdir(parents=True, exist_ok=True)
+col = FPL_spectral(DIMENSION, res_v, max_v, vhs_coeff, vhs_exponent, device=DEVICE)
 if path_solution.exists():
     print(f"Loading the solution from [{str(path_solution)}]...")
     target = torch.load(path_solution, weights_only=False)
@@ -119,7 +137,6 @@ else:
     elif init_type=='bimaxwellian':
         print("Generating the numerical biMaxwellian solution...")
         f_init  = bimaxwellian(DIMENSION, v, CENTER_1, CENTER_2, STD_1, STD_2, density)
-        col     = FPL_spectral(DIMENSION, res_v, max_v, vhs_coeff, vhs_exponent, device=DEVICE)
         target  = col.solve(0.0, max_t, delta_t, f_init).cpu().reshape(base_shape)
     else:
         warnings.warn(f"The initial condition [{init_type}] is not supported.", RuntimeWarning)
@@ -147,9 +164,13 @@ def get_prefix(index: int) -> str:
 
 ##################################################
 def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
+    assert min(indices)>=1, "The minimum index must be greater than or equal to 1."
     for index, seed in product(indices, LIST_SEEDS):
-        path_checkpoint__pinn = path_base / f"pinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}" / "checkpoints/"
-        path_checkpoint__oppinn = path_base / f"oppinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}" / "checkpoints/"
+        path__oppinn = path_base / f"pinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
+        path__pinn   = path_base / f"oppinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
+        # The above two paths will be explicitly used later in this loop
+        path_checkpoint__pinn = path__oppinn / "checkpoints/"
+        path_checkpoint__oppinn = path__pinn / "checkpoints/"
             
         ##################################################
         # Conduct infernence
@@ -168,12 +189,48 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
         oppinn.load_state_dict( loaded_oppinn['state_dict'] )
         
         points = torch.cartesian_prod(grid_t, *(grid_v for _ in range(DIMENSION)))
+        # Evaluation
         pinn.eval()
         oppinn.eval()
         with torch.inference_mode():
-            pred_pinn   = pinn.forward(points).cpu().reshape(base_shape)
-            pred_oppinn = oppinn.forward(points).cpu().reshape(base_shape)
-            
+            # Fast spectral method (precomputation)
+            for _ in range(n_iter):
+                _precompute_time = time.time()
+                col.precompute()
+                _precompute_time = time.time() - _precompute_time
+                if index in dict__precompute_time.keys():
+                    dict__precompute_time[index].append(_precompute_time)
+                else:
+                    dict__precompute_time[index] = [_precompute_time]
+            # PINNs
+            pred_pinn: torch.Tensor
+            for _ in range(n_iter):
+                _inference_time__pinn = time.time()
+                pred_pinn   = pinn.forward(points)
+                _inference_time__pinn = time.time() - _inference_time__pinn
+                if index in dict__inference_time__pinn.keys():
+                    dict__inference_time__pinn[index].append(_inference_time__pinn)
+                else:
+                    dict__inference_time__pinn[index] = [_inference_time__pinn]
+            pred_pinn   = pred_pinn.cpu().reshape(base_shape)
+            # opPINNs
+            pred_oppinn: torch.Tensor
+            for _ in range(n_iter):
+                _inference_time__oppinn = time.time()
+                pred_oppinn = oppinn.forward(points)
+                _inference_time__oppinn = time.time() - _inference_time__oppinn
+                if index in dict__inference_time__oppinn.keys():
+                    dict__inference_time__oppinn[index].append(_inference_time__oppinn)
+                else:
+                    dict__inference_time__oppinn[index] = [_inference_time__oppinn]
+            pred_oppinn = pred_oppinn.cpu().reshape(base_shape)
+        # Save to the dictionaries
+        dict__pred__pinn[   (index, seed)] = pred_pinn
+        dict__pred__oppinn[ (index, seed)] = pred_oppinn
+        
+        ##################################################
+        # Compute errors and moments
+        ##################################################
         # Compute errors
         dict__abs_error__pinn[  (index, seed)] = absolute_error(pred_pinn,   target)
         dict__abs_error__oppinn[(index, seed)] = absolute_error(pred_oppinn, target)
@@ -194,29 +251,52 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
         dict__energy__oppinn[  (index, seed)] = compute_energy_density(pred_oppinn, v)
         dict__entropy__oppinn[ (index, seed)] = compute_entropy_density(pred_oppinn, v)
         
-        # Save to the dictionaries
-        dict__pred__pinn[   (index, seed)] = pred_pinn
-        dict__pred__oppinn[ (index, seed)] = pred_oppinn
+        
+        ##################################################
+        # Load training history
+        ##################################################
+        history_pinn    = torch.load(path__pinn / "train_history.pth", weights_only=False)
+        history_oppinn  = torch.load(path__oppinn / "train_history.pth", weights_only=False)
+        # Save training time (PINNs only, not the surrogate models)
+        train_time__pinn    = list(accumulate(history_pinn['train_time']))
+        train_time__oppinn  = list(accumulate(history_oppinn['train_time']))
+        dict__train_time__pinn[  seed]      = train_time__pinn
+        dict__train_time__oppinn[seed]      = train_time__oppinn
+        dict__residual_loss__pinn[seed]     = history_pinn['loss_residual']
+        dict__residual_loss__oppinn[seed]   = history_oppinn['loss_residual']
+        dict__initial_loss__pinn[seed]      = history_pinn['loss_initial']
+        dict__initial_loss__oppinn[seed]    = history_oppinn['loss_initial']
     
     if save:
         torch.save(
             {
-                'abs_error__pinn':        dict__abs_error__pinn,
-                'rel_error__pinn':        dict__rel_error__pinn,
-                'abs_error__oppinn':      dict__abs_error__oppinn,
-                'rel_error__oppinn':      dict__rel_error__oppinn,
-                'mass__pinn':             dict__mass__pinn,
-                'mass__oppinn':           dict__mass__oppinn,
-                'mass__target':           dict__mass__target,
-                'momentum__pinn':         dict__momentum__pinn,
-                'momentum__oppinn':       dict__momentum__oppinn,
-                'momentum__target':       dict__momentum__target,
-                'energy__pinn':           dict__energy__pinn,
-                'energy__oppinn':         dict__energy__oppinn,
-                'energy__target':         dict__energy__target,
-                'entropy__pinn':          dict__entropy__pinn,
-                'entropy__oppinn':        dict__entropy__oppinn,
-                'entropy__target':        dict__entropy__target,
+                'abs_error__pinn':          dict__abs_error__pinn,
+                'rel_error__pinn':          dict__rel_error__pinn,
+                'abs_error__oppinn':        dict__abs_error__oppinn,
+                'rel_error__oppinn':        dict__rel_error__oppinn,
+                'mass__pinn':               dict__mass__pinn,
+                'mass__oppinn':             dict__mass__oppinn,
+                'mass__target':             dict__mass__target,
+                'momentum__pinn':           dict__momentum__pinn,
+                'momentum__oppinn':         dict__momentum__oppinn,
+                'momentum__target':         dict__momentum__target,
+                'energy__pinn':             dict__energy__pinn,
+                'energy__oppinn':           dict__energy__oppinn,
+                'energy__target':           dict__energy__target,
+                'entropy__pinn':            dict__entropy__pinn,
+                'entropy__oppinn':          dict__entropy__oppinn,
+                'entropy__target':          dict__entropy__target,
+
+                'precompute_time':          dict__precompute_time,
+                'inference_time__pinn':     dict__inference_time__pinn,
+                'inference_time__oppinn':   dict__inference_time__oppinn,
+
+                'train_time__pinn':         dict__train_time__pinn,
+                'train_time__oppinn':       dict__train_time__oppinn,
+                'residual_loss__pinn':      dict__residual_loss__pinn,
+                'residual_loss__oppinn':    dict__residual_loss__oppinn,
+                'initial_loss__pinn':       dict__initial_loss__pinn,
+                'initial_loss__oppinn':     dict__initial_loss__oppinn,
             },
             path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent_{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
         )
@@ -264,11 +344,11 @@ def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
     fig, axes = plt.subplots(2, 1, figsize=(10, 6), dpi=DPI, sharex=True)
     suptitle: str
     if init_type=='bkw':
-        suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"BKW solution ($\\Lambda={vhs_coeff:.2f}$)\nTrained for {index} epochs"
     elif init_type=='maxwellian':
-        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Maxwellian distribution ($\\Lambda={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     elif init_type=='bimaxwellian':
-        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Sum of two Maxwellian distributions ($\\Lambda={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
     axes[0].set_ylabel("Absolute $L^2$ error", fontsize=SIZE_TITLE)
     axes[1].set_ylabel("Relative $L^2$ error", fontsize=SIZE_TITLE)
@@ -325,17 +405,17 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     fig, axd = plt.subplot_mosaic(layout, figsize=(10, 8), layout="constrained", sharex=True)
     suptitle: str
     if init_type=='bkw':
-        suptitle = f"BKW solution ($C={vhs_coeff:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"BKW solution ($\\Lambda={vhs_coeff:.2f}$)\nTrained for {index} epochs"
     elif init_type=='maxwellian':
-        suptitle = f"Maxwellian distribution ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Maxwellian distribution ($\\Lambda={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     elif init_type=='bimaxwellian':
-        suptitle = f"Sum of two Maxwellian distributions ($C={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
+        suptitle = f"Sum of two Maxwellian distributions ($\\Lambda={vhs_coeff:.2f}$, $\\gamma={vhs_exponent:.2f}$)\nTrained for {index} epochs"
     fig.suptitle(suptitle, fontsize=SIZE_SUPTITLE)
     xlim = [0, max_t]
     xticks = tuple(range(int(max_t)+1))
     _limit_bulk_speed = 1e-2
     
-    axd['density'].set_title(r'Mass Density ($\rho$)')
+    axd['density'].set_title(r'Mass density ($\rho$)')
     axd['density'].plot(t, dict__mass__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
     axd['density'].plot(t, dict__mass__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
     axd['density'].plot(t, dict__mass__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
@@ -345,7 +425,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['density'].set_ylim(0.0, 2*dict__mass__target[(index, seed)].max().item())
     axd['density'].grid(True)
     
-    axd['vx'].set_title(r'Bulk Velocity ($v_x$)')
+    axd['vx'].set_title(r'Bulk velocity ($v_x$)')
     axd['vx'].plot(t, dict__momentum__target[(index, seed)][:, 0], 'k--', linewidth=3*LINEWIDTH, label='Target')
     axd['vx'].plot(t, dict__momentum__oppinn[(index, seed)][:, 0], 'r-',  linewidth=LINEWIDTH, label='opPINN')
     axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
@@ -355,7 +435,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vx'].set_ylim(-_limit_bulk_speed, _limit_bulk_speed)
     axd['vx'].grid(True)
     
-    axd['vy'].set_title(r'Bulk Velocity ($v_y$)')
+    axd['vy'].set_title(r'Bulk velocity ($v_y$)')
     axd['vy'].plot(t, dict__momentum__target[(index, seed)][:, 1], 'k--', linewidth=3*LINEWIDTH, label='Target')
     axd['vy'].plot(t, dict__momentum__oppinn[(index, seed)][:, 1], 'r-',  linewidth=LINEWIDTH, label='opPINN')
     axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
@@ -365,7 +445,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vy'].set_ylim(-_limit_bulk_speed, _limit_bulk_speed)
     axd['vy'].grid(True)
     
-    axd['energy'].set_title(r'Energy Density ($E$)')
+    axd['energy'].set_title(r'Energy density ($E$)')
     axd['energy'].plot(t, dict__energy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
     axd['energy'].plot(t, dict__energy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
     axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
@@ -375,7 +455,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['energy'].set_ylim(0.0, 2*dict__energy__target[(index, seed)].max().item())
     axd['energy'].grid(True)
     
-    axd['entropy'].set_title(r'Entropy Density ($S$)')
+    axd['entropy'].set_title(r'Entropy density ($S$)')
     axd['entropy'].plot(t, dict__entropy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
     axd['entropy'].plot(t, dict__entropy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
     axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
