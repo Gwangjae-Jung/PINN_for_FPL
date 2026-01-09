@@ -107,6 +107,12 @@ dict__precompute_time:          dict[int, list[float]]  = {}
 dict__inference_time__pinn:     dict[int, list[float]]  = {}
 dict__inference_time__oppinn:   dict[int, list[float]]  = {}
 
+# Key: index, order (aggregated over seeds)
+dict__tv_abs_error__pinn:       dict[tuple[int, float], float]  = {}
+dict__tv_abs_error__oppinn:     dict[tuple[int, float], float]  = {}
+dict__tv_rel_error__pinn:       dict[tuple[int, float], float]  = {}
+dict__tv_rel_error__oppinn:     dict[tuple[int, float], float]  = {}
+
 # Key: seed
 dict__train_time__pinn:         dict[int, torch.Tensor] = {}
 dict__train_time__oppinn:       dict[int, torch.Tensor] = {}
@@ -163,14 +169,14 @@ def get_prefix(index: int) -> str:
 
 
 ##################################################
-def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
+def validate_models(indices: list[int] = LIST_INDEX, save: bool=True) -> None:
     assert min(indices)>=1, "The minimum index must be greater than or equal to 1."
     for index, seed in product(indices, LIST_SEEDS):
-        path__oppinn = path_base / f"pinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
-        path__pinn   = path_base / f"oppinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
+        path__pinn   = path_base / f"pinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
+        path__oppinn = path_base / f"oppinn{DIMENSION}D__vhs__coeff{vhs_coeff:.2f}_exp{vhs_exponent:.2f}__init_type_{init_type}__seed{seed}"
         # The above two paths will be explicitly used later in this loop
-        path_checkpoint__pinn = path__oppinn / "checkpoints/"
-        path_checkpoint__oppinn = path__pinn / "checkpoints/"
+        path_checkpoint__pinn   = path__pinn / "checkpoints/"
+        path_checkpoint__oppinn = path__oppinn / "checkpoints/"
             
         ##################################################
         # Conduct infernence
@@ -298,7 +304,7 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=False) -> None:
                 'initial_loss__pinn':       dict__initial_loss__pinn,
                 'initial_loss__oppinn':     dict__initial_loss__oppinn,
             },
-            path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent_{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
+            path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
         )
     return None
 

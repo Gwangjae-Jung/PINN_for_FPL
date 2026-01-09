@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore")
 
 
 LIST_GAMMA      = [-3.0+k for k in range(5)]
-LIST_SAMPLE_T   = ['fixed_t', 'random_t']
+LIST_SAMPLE_T   = ['fixed_t',]
 LIST_RES_T      = [601]
 LIST_RES_V      = [64]
 LIST_INIT_TYPE  = ['bimaxwellian', 'bkw']
