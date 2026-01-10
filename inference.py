@@ -56,6 +56,9 @@ LIST_COLORS     = ['red', 'orange', 'green', 'blue', 'purple']
 SIZE_SUPTITLE   = 20
 SIZE_TITLE      = 16
 LINEWIDTH       = 3
+STYLE_TARGET    = 'k--'
+STYLE_OPPINN    = 'r-'
+STYLE_PINN      = 'g-'
 DPI             = 1000
 
 
@@ -101,17 +104,6 @@ dict__energy__target:       dict[tuple[int, int], torch.Tensor] = {}
 dict__entropy__pinn:        dict[tuple[int, int], torch.Tensor] = {}
 dict__entropy__oppinn:      dict[tuple[int, int], torch.Tensor] = {}
 dict__entropy__target:      dict[tuple[int, int], torch.Tensor] = {}
-
-# Key: index
-dict__precompute_time:          dict[int, list[float]]  = {}
-dict__inference_time__pinn:     dict[int, list[float]]  = {}
-dict__inference_time__oppinn:   dict[int, list[float]]  = {}
-
-# Key: index, order (aggregated over seeds)
-dict__tv_abs_error__pinn:       dict[tuple[int, float], float]  = {}
-dict__tv_abs_error__oppinn:     dict[tuple[int, float], float]  = {}
-dict__tv_rel_error__pinn:       dict[tuple[int, float], float]  = {}
-dict__tv_rel_error__oppinn:     dict[tuple[int, float], float]  = {}
 
 # Key: seed
 dict__train_time__pinn:         dict[int, torch.Tensor] = {}
@@ -199,37 +191,8 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=True) -> None:
         pinn.eval()
         oppinn.eval()
         with torch.inference_mode():
-            # Fast spectral method (precomputation)
-            for _ in range(n_iter):
-                _precompute_time = time.time()
-                col.precompute()
-                _precompute_time = time.time() - _precompute_time
-                if index in dict__precompute_time.keys():
-                    dict__precompute_time[index].append(_precompute_time)
-                else:
-                    dict__precompute_time[index] = [_precompute_time]
-            # PINNs
-            pred_pinn: torch.Tensor
-            for _ in range(n_iter):
-                _inference_time__pinn = time.time()
-                pred_pinn   = pinn.forward(points)
-                _inference_time__pinn = time.time() - _inference_time__pinn
-                if index in dict__inference_time__pinn.keys():
-                    dict__inference_time__pinn[index].append(_inference_time__pinn)
-                else:
-                    dict__inference_time__pinn[index] = [_inference_time__pinn]
-            pred_pinn   = pred_pinn.cpu().reshape(base_shape)
-            # opPINNs
-            pred_oppinn: torch.Tensor
-            for _ in range(n_iter):
-                _inference_time__oppinn = time.time()
-                pred_oppinn = oppinn.forward(points)
-                _inference_time__oppinn = time.time() - _inference_time__oppinn
-                if index in dict__inference_time__oppinn.keys():
-                    dict__inference_time__oppinn[index].append(_inference_time__oppinn)
-                else:
-                    dict__inference_time__oppinn[index] = [_inference_time__oppinn]
-            pred_oppinn = pred_oppinn.cpu().reshape(base_shape)
+            pred_pinn = pinn.forward(points).cpu().reshape(base_shape)
+            pred_oppinn = oppinn.forward(points).cpu().reshape(base_shape)
         # Save to the dictionaries
         dict__pred__pinn[   (index, seed)] = pred_pinn
         dict__pred__oppinn[ (index, seed)] = pred_oppinn
@@ -274,6 +237,8 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=True) -> None:
         dict__initial_loss__oppinn[seed]    = history_oppinn['loss_initial']
     
     if save:
+        path_inference = path_base.parent / f"inference_data__{sample_t}"
+        path_inference.mkdir(parents=True, exist_ok=True)
         torch.save(
             {
                 'abs_error__pinn':          dict__abs_error__pinn,
@@ -293,10 +258,6 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=True) -> None:
                 'entropy__oppinn':          dict__entropy__oppinn,
                 'entropy__target':          dict__entropy__target,
 
-                'precompute_time':          dict__precompute_time,
-                'inference_time__pinn':     dict__inference_time__pinn,
-                'inference_time__oppinn':   dict__inference_time__oppinn,
-
                 'train_time__pinn':         dict__train_time__pinn,
                 'train_time__oppinn':       dict__train_time__oppinn,
                 'residual_loss__pinn':      dict__residual_loss__pinn,
@@ -304,7 +265,7 @@ def validate_models(indices: list[int] = LIST_INDEX, save: bool=True) -> None:
                 'initial_loss__pinn':       dict__initial_loss__pinn,
                 'initial_loss__oppinn':     dict__initial_loss__oppinn,
             },
-            path_base / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
+            path_inference / f"inference__vhs__coeff{vhs_coeff:.2f}_exponent{vhs_exponent:.2f}__init_type_{init_type}__res_t{res_t:04d}_v{res_v:03d}.pth"
         )
     return None
 
@@ -421,10 +382,16 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     xticks = tuple(range(int(max_t)+1))
     _limit_bulk_speed = 1e-2
     
+    zeros_t = torch.zeros_like(t)
+    true_density = dict__mass__target[(index, seed)][0]
+    true_bulk_velocity = dict__momentum__target[(index, seed)][0]
+    true_energy_density = dict__energy__target[(index, seed)][0]
+    true_entropy_density = dict__entropy__target[(index, seed)]
+    
     axd['density'].set_title(r'Mass density ($\rho$)')
-    axd['density'].plot(t, dict__mass__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
-    axd['density'].plot(t, dict__mass__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
-    axd['density'].plot(t, dict__mass__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['density'].plot(t, true_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['density'].plot(t, dict__mass__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
+    axd['density'].plot(t, dict__mass__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['density'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['density'].set_xticks(xticks, xticks)
     axd['density'].set_xlim(xlim)
@@ -432,9 +399,9 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['density'].grid(True)
     
     axd['vx'].set_title(r'Bulk velocity ($v_x$)')
-    axd['vx'].plot(t, dict__momentum__target[(index, seed)][:, 0], 'k--', linewidth=3*LINEWIDTH, label='Target')
-    axd['vx'].plot(t, dict__momentum__oppinn[(index, seed)][:, 0], 'r-',  linewidth=LINEWIDTH, label='opPINN')
-    axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['vx'].plot(t, true_bulk_velocity[0]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['vx'].plot(t, dict__momentum__oppinn[(index, seed)][:, 0], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
+    axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vx'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['vx'].set_xticks(xticks, xticks)
     axd['vx'].set_xlim(xlim)
@@ -442,29 +409,29 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vx'].grid(True)
     
     axd['vy'].set_title(r'Bulk velocity ($v_y$)')
-    axd['vy'].plot(t, dict__momentum__target[(index, seed)][:, 1], 'k--', linewidth=3*LINEWIDTH, label='Target')
-    axd['vy'].plot(t, dict__momentum__oppinn[(index, seed)][:, 1], 'r-',  linewidth=LINEWIDTH, label='opPINN')
-    axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['vy'].plot(t, true_bulk_velocity[1]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['vy'].plot(t, dict__momentum__oppinn[(index, seed)][:, 1], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
+    axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['vy'].set_xticks(xticks, xticks)
     axd['vy'].set_xlim(xlim)
     axd['vy'].set_ylim(-_limit_bulk_speed, _limit_bulk_speed)
     axd['vy'].grid(True)
     
-    axd['energy'].set_title(r'Energy density ($E$)')
-    axd['energy'].plot(t, dict__energy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
-    axd['energy'].plot(t, dict__energy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
-    axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['energy'].set_title(r'Energy density')
+    axd['energy'].plot(t, true_energy_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['energy'].plot(t, dict__energy__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
+    axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['energy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['energy'].set_xticks(xticks, xticks)
     axd['energy'].set_xlim(xlim)
     axd['energy'].set_ylim(0.0, 2*dict__energy__target[(index, seed)].max().item())
     axd['energy'].grid(True)
     
-    axd['entropy'].set_title(r'Entropy density ($S$)')
-    axd['entropy'].plot(t, dict__entropy__target[(index, seed)], 'k--', linewidth=3*LINEWIDTH, label='Target')
-    axd['entropy'].plot(t, dict__entropy__oppinn[(index, seed)], 'r-',  linewidth=LINEWIDTH, label='opPINN')
-    axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], 'g-',  linewidth=LINEWIDTH, label='PINN (ours)')
+    axd['entropy'].set_title(r'Entropy density ($H$)')
+    axd['entropy'].plot(t, true_entropy_density, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['entropy'].plot(t, dict__entropy__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
+    axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['entropy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
     axd['entropy'].set_xticks(xticks, xticks)
     axd['entropy'].set_xlim(xlim)
