@@ -6,7 +6,6 @@ import  warnings
 from    pathlib                 import  Path
 from    itertools               import  accumulate, product
 import  matplotlib.pyplot       as      plt
-import  time
 
 import  torch
 from    deep_numerical.utils    import  space_grid, relative_error
@@ -60,6 +59,7 @@ STYLE_TARGET    = 'k--'
 STYLE_OPPINN    = 'r-'
 STYLE_PINN      = 'g-'
 DPI             = 1000
+BBOX_TO_ANCHOR  = tuple((0.5, -0.01))
 
 
 ##################################################
@@ -361,7 +361,7 @@ def plot_error(index: int) -> tuple[plt.Figure, plt.Axes]:
         ax.grid(True)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncols=len(LIST_SEEDS), fontsize=SIZE_LABEL)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=BBOX_TO_ANCHOR, ncols=len(LIST_SEEDS), fontsize=SIZE_LABEL)
     fig.tight_layout()
     return fig, axes
 
@@ -392,7 +392,6 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     true_density = dict__mass__target[(index, seed)][0]
     true_bulk_velocity = dict__momentum__target[(index, seed)][0]
     true_energy_density = dict__energy__target[(index, seed)][0]
-    true_entropy_density = dict__entropy__target[(index, seed)]
     
     axd['density'].set_title(r'Mass density ($\rho$)', fontsize=SIZE_TITLE)
     axd['density'].plot(t, true_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH)
@@ -446,7 +445,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['entropy'].grid(True)
     
     handles, labels = axd['density'].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.01), ncols=3, fontsize=SIZE_LABEL)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=BBOX_TO_ANCHOR, ncols=3, fontsize=SIZE_LABEL)
 
     fig.tight_layout()
     return fig, axd
