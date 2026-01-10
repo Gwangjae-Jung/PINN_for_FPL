@@ -1,6 +1,6 @@
 from    typing      import  Callable, Self, Optional
 import  torch
-from    deep_numerical.numerical.solvers    import  FastSM_Landau_VHS
+from    deep_numerical.numerical.solver import  FastSM_Landau_VHS
 from    utils       import  compute_grad, FiniteDifferenceMethod as FDM
 
 
