@@ -395,7 +395,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     true_entropy_density = dict__entropy__target[(index, seed)]
     
     axd['density'].set_title(r'Mass density ($\rho$)', fontsize=SIZE_TITLE)
-    axd['density'].plot(t, true_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['density'].plot(t, true_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH)
     axd['density'].plot(t, dict__mass__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
     axd['density'].plot(t, dict__mass__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['density'].set_xticks(xticks, xticks)
@@ -404,7 +404,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['density'].grid(True)
     
     axd['vx'].set_title(r'Bulk velocity ($v_x$)', fontsize=SIZE_TITLE)
-    axd['vx'].plot(t, true_bulk_velocity[0]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['vx'].plot(t, true_bulk_velocity[0]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH)
     axd['vx'].plot(t, dict__momentum__oppinn[(index, seed)][:, 0], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
     axd['vx'].plot(t, dict__momentum__pinn[  (index, seed)][:, 0], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vx'].set_xticks(xticks, xticks)
@@ -413,7 +413,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vx'].grid(True)
     
     axd['vy'].set_title(r'Bulk velocity ($v_y$)', fontsize=SIZE_TITLE)
-    axd['vy'].plot(t, true_bulk_velocity[1]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['vy'].plot(t, true_bulk_velocity[1]+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH)
     axd['vy'].plot(t, dict__momentum__oppinn[(index, seed)][:, 1], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
     axd['vy'].plot(t, dict__momentum__pinn[  (index, seed)][:, 1], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['vy'].set_xticks(xticks, xticks)
@@ -422,7 +422,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['vy'].grid(True)
     
     axd['energy'].set_title(r'Energy density ($E$)', fontsize=SIZE_TITLE)
-    axd['energy'].plot(t, true_energy_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
+    axd['energy'].plot(t, true_energy_density+zeros_t, STYLE_TARGET, linewidth=LINEWIDTH)
     axd['energy'].plot(t, dict__energy__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
     axd['energy'].plot(t, dict__energy__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['energy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
@@ -432,7 +432,6 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['energy'].grid(True)
     
     axd['entropy'].set_title(r'Entropy density ($H$)', fontsize=SIZE_TITLE)
-    axd['entropy'].plot(t, true_entropy_density, STYLE_TARGET, linewidth=LINEWIDTH, label='Target')
     axd['entropy'].plot(t, dict__entropy__oppinn[(index, seed)], STYLE_OPPINN,  linewidth=LINEWIDTH, label='opPINN')
     axd['entropy'].plot(t, dict__entropy__pinn[  (index, seed)], STYLE_PINN,  linewidth=LINEWIDTH, label='PINN (ours)')
     axd['entropy'].set_xlabel(r'$t$', fontsize=SIZE_TITLE)
@@ -447,7 +446,7 @@ def plot_quantities(index: int, seed: int=0) -> tuple[plt.Figure, dict[str, plt.
     axd['entropy'].grid(True)
     
     handles, labels = axd['density'].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncols=3, fontsize=SIZE_LABEL)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.01), ncols=3, fontsize=SIZE_LABEL)
 
     fig.tight_layout()
     return fig, axd
