@@ -12,27 +12,32 @@ __all__: list[str] = ['FastSM_Landau', 'FastSM_Landau_VHS']
 
 
 class FastSM_Landau():
-    """## Fast spectral method base solver for the Fokker-Planck-Landau equation
+    """Fast spectral method base solver for the Fokker-Planck-Landau equation.
 
-## Description
-Provides fundamental algorithms, data structures, and frequency-space convolution routines
-for solving the Fokker-Planck-Landau (FPL) collision operator using the fast Fourier spectral method.
-Inspired by L. Pareschi, G. Russo, G. Toscani, Journal of Computational Physics, 165(1):216-236, 2000.
+    ## Description
+    Provides fundamental algorithms, data structures, and frequency-space convolution
+    routines for solving the Fokker-Planck-Landau (FPL) collision operator using the
+    fast Fourier spectral method.
+    Reference: L. Pareschi, G. Russo, G. Toscani, J. Comput. Phys., 165(1):216-236, 2000.
 
-## Arguments
-`dimension` (`int`): Dimension of the velocity domain (`2` or `3`).
-`v_num_grid` (`int`): Number of grid points along each velocity dimension.
-`v_max` (`float`): Maximum velocity value defining truncation domain `[-v_max, v_max]^d`.
-`x_num_grid` (`Optional[int]`, default: `None`): Spatial grid resolution (unused for homogeneous FPL).
-`x_max` (`Optional[float]`, default: `None`): Spatial domain maximum (unused for homogeneous FPL).
-`quad_order_uniform` (`Optional[int]`, default: `None`): Quadrature order for angular integration.
-`quad_order_legendre` (`Optional[int]`, default: `None`): Quadrature order for radial Legendre integration.
-`dtype` (`Optional[torch.dtype]`, default: `None`): PyTorch tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dimension` (`int`): Dimension of the velocity domain (`2` or `3`).
+    `v_num_grid` (`int`): Number of grid points along each velocity dimension.
+    `v_max` (`float`): Maximum velocity value defining truncation domain `[-v_max, v_max]^d`.
+    `x_num_grid` (`Optional[int]`, default: `None`): Spatial grid resolution (unused for
+    homogeneous FPL).
+    `x_max` (`Optional[float]`, default: `None`): Spatial domain maximum (unused for
+    homogeneous FPL).
+    `quad_order_uniform` (`Optional[int]`, default: `None`): Quadrature order for angular
+    integration.
+    `quad_order_legendre` (`Optional[int]`, default: `None`): Quadrature order for radial
+    Legendre integration.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): PyTorch tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`None`: None.
-"""
+    ## Returns
+    `None`: None.
+    """
     def __init__(
             self,
             dimension:           int,
@@ -138,18 +143,18 @@ Inspired by L. Pareschi, G. Russo, G. Toscani, Journal of Computational Physics,
         return self._fpl_loss_tensor
 
     def precompute(self) -> None:
-        """## Precompute characteristic functions and convolution weights
+        """Precompute characteristic functions and convolution weights.
 
-## Description
-Executes dimensionality-specific precomputations of characteristic weights, gain tensors,
-and loss tensors required by the fast spectral method.
+        ## Description
+        Executes dimensionality-specific precomputations of characteristic weights, gain
+        tensors, and loss tensors required by the fast spectral method.
 
-## Arguments
-None.
+        ## Arguments
+        None.
 
-## Returns
-`None`: None.
-"""
+        ## Returns
+        `None`: None.
+        """
         if self._dimension in (2, 3):
             getattr(self, f"_precompute_fpl_character_1_{self._dimension}D")()
             getattr(self, f"_precompute_fpl_character_2_{self._dimension}D")()
@@ -188,18 +193,21 @@ None.
             _placeholder_t: float,
             fft_curr:       torch.Tensor,
         ) -> torch.Tensor:
-        """## Compute gain term in Fourier space
+        """Compute the gain term of the FPL collision operator in Fourier space.
 
-## Description
-Evaluates the gain term of the Fokker-Planck-Landau operator in the Fourier frequency domain.
+        ## Description
+        Evaluates the gain term of the Fokker-Planck-Landau operator in the Fourier
+        frequency domain via spectral convolution.
 
-## Arguments
-`_placeholder_t` (`float`): Current temporal coordinate (unused placeholder for ODE solver compatibility).
-`fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution function.
+        ## Arguments
+        `_placeholder_t` (`float`): Current temporal coordinate (unused placeholder for
+        ODE solver compatibility).
+        `fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution
+        function.
 
-## Returns
-`torch.Tensor`: Evaluated gain term in Fourier space.
-"""
+        ## Returns
+        `torch.Tensor`: Evaluated gain term in Fourier space.
+        """
         if self._dimension in (2, 3):
             gain_fft_positive: torch.Tensor = convolve_freqs(
                 (self._freq_norms**2) * fft_curr,
@@ -228,18 +236,21 @@ Evaluates the gain term of the Fokker-Planck-Landau operator in the Fourier freq
             _placeholder_t: float,
             fft_curr:       torch.Tensor,
         ) -> torch.Tensor:
-        """## Compute loss term in Fourier space
+        """Compute the loss term of the FPL collision operator in Fourier space.
 
-## Description
-Evaluates the loss term of the Fokker-Planck-Landau operator in the Fourier frequency domain.
+        ## Description
+        Evaluates the loss term of the Fokker-Planck-Landau operator in the Fourier
+        frequency domain via spectral convolution.
 
-## Arguments
-`_placeholder_t` (`float`): Current temporal coordinate (unused placeholder for ODE solver compatibility).
-`fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution function.
+        ## Arguments
+        `_placeholder_t` (`float`): Current temporal coordinate (unused placeholder for
+        ODE solver compatibility).
+        `fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution
+        function.
 
-## Returns
-`torch.Tensor`: Evaluated loss term in Fourier space.
-"""
+        ## Returns
+        `torch.Tensor`: Evaluated loss term in Fourier space.
+        """
         if self._dimension in (2, 3):
             loss_fft: torch.Tensor = convolve_freqs(
                 fft_curr,
@@ -254,18 +265,19 @@ Evaluates the loss term of the Fokker-Planck-Landau operator in the Fourier freq
             _placeholder_t: Optional[float],
             fft_curr:       torch.Tensor,
         ) -> torch.Tensor:
-        """## Compute net collision operator in Fourier space
+        """Compute the net collision operator in Fourier space.
 
-## Description
-Computes `gain_fft - loss_fft` in the Fourier frequency domain.
+        ## Description
+        Returns `gain_fft - loss_fft` in the Fourier frequency domain.
 
-## Arguments
-`_placeholder_t` (`Optional[float]`): Current temporal coordinate.
-`fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution function.
+        ## Arguments
+        `_placeholder_t` (`Optional[float]`): Current temporal coordinate.
+        `fft_curr` (`torch.Tensor`): Current Fourier transform of the distribution
+        function.
 
-## Returns
-`torch.Tensor`: Total collision operator evaluated in Fourier space.
-"""
+        ## Returns
+        `torch.Tensor`: Total collision operator evaluated in Fourier space.
+        """
         return self.compute_gain_fft(0.0, fft_curr) - self.compute_loss_fft(0.0, fft_curr)
 
     def solve(
@@ -274,24 +286,30 @@ Computes `gain_fft - loss_fft` in the Fourier frequency domain.
             t_final: float,
             delta_t: float,
             f_init:  torch.Tensor,
-            RK_fcn:  Callable[[float, torch.Tensor, float, Callable[[float, torch.Tensor], torch.Tensor]], torch.Tensor] = one_step_RK4_classic,
+            RK_fcn:  Callable[
+                [float, torch.Tensor, float, Callable[[float, torch.Tensor], torch.Tensor]],
+                torch.Tensor,
+            ] = one_step_RK4_classic,
         ) -> torch.Tensor:
-        """## Numerically integrate the Fokker-Planck-Landau equation
+        """Numerically integrate the Fokker-Planck-Landau equation forward in time.
 
-## Description
-Advances the initial distribution `f_init` from `t_init` to `t_final` with step size `delta_t`
-using the fast spectral method and the specified Runge-Kutta integrator.
+        ## Description
+        Advances the initial distribution `f_init` from `t_init` to `t_final` with step
+        size `delta_t` using the fast spectral method and the specified Runge-Kutta
+        integrator.
 
-## Arguments
-`t_init` (`float`): Initial time instant.
-`t_final` (`float`): Final time instant.
-`delta_t` (`float`): Step size for temporal discretization.
-`f_init` (`torch.Tensor`): Initial distribution function in physical space.
-`RK_fcn` (`Callable[[float, torch.Tensor, float, Callable[[float, torch.Tensor], torch.Tensor]], torch.Tensor]`, default: `one_step_RK4_classic`): Single-step Runge-Kutta integration function.
+        ## Arguments
+        `t_init` (`float`): Initial time instant.
+        `t_final` (`float`): Final time instant.
+        `delta_t` (`float`): Step size for temporal discretization.
+        `f_init` (`torch.Tensor`): Initial distribution function in physical space.
+        `RK_fcn` (`Callable[...]`, default: `one_step_RK4_classic`): Single-step
+        Runge-Kutta integration function conforming to the `one_step_*` interface.
 
-## Returns
-`torch.Tensor`: Computed distribution trajectory with shape `(batch, num_time_steps, *space, *velocity, channel)`.
-"""
+        ## Returns
+        `torch.Tensor`: Trajectory tensor of shape
+        `(batch, num_time_steps+1, *space, *velocity, channel)`.
+        """
         try:
             from tqdm import trange
         except ImportError:
@@ -305,17 +323,18 @@ using the fast spectral method and the specified Runge-Kutta integrator.
         return torch.stack(ret, dim=1)
 
     def to(self, device: torch.device) -> 'FastSM_Landau':
-        """## Move solver internal tensors to target device
+        """Move all solver internal tensors to the target device.
 
-## Description
-Transfers all precomputed tensors and coordinate grids to the specified PyTorch device.
+        ## Description
+        Transfers all precomputed tensors and coordinate grids to the specified
+        PyTorch device.
 
-## Arguments
-`device` (`torch.device`): Target computing device.
+        ## Arguments
+        `device` (`torch.device`): Target computing device.
 
-## Returns
-`FastSM_Landau`: Self reference with tensors moved to `device`.
-"""
+        ## Returns
+        `FastSM_Landau`: Self reference with tensors moved to `device`.
+        """
         self._device = device
         self._freqs = self._freqs.to(device)
         self._freq_norms = self._freq_norms.to(device)
@@ -333,29 +352,33 @@ Transfers all precomputed tensors and coordinate grids to the specified PyTorch 
 
 
 class FastSM_Landau_VHS(FastSM_Landau):
-    """## Fast spectral method solver for Fokker-Planck-Landau equation with VHS kernel
+    """Fast spectral method solver for the FPL equation with the VHS interaction kernel.
 
-## Description
-Fast spectral method solver for the Fokker-Planck-Landau collision operator with the Variable Hard Sphere (VHS)
-interaction model, computing collision integrals in $O(N^d \\log N)$ complexity.
-Reference: L. Pareschi, G. Russo, G. Toscani, Journal of Computational Physics, 165(1):216-236, 2000.
+    ## Description
+    Extends `FastSM_Landau` to implement precomputation and evaluation of the Variable
+    Hard Sphere (VHS) collision kernel, computing collision integrals in
+    $O(N^d \\log N)$ complexity.
+    Reference: L. Pareschi, G. Russo, G. Toscani, J. Comput. Phys., 165(1):216-236, 2000.
 
-## Arguments
-`dimension` (`int`): Dimension of the velocity domain (`2` or `3`).
-`v_num_grid` (`int`): Number of grid points along each velocity dimension.
-`v_max` (`float`): Maximum velocity value defining truncation domain `[-v_max, v_max]^d`.
-`x_num_grid` (`Optional[int]`, default: `None`): Spatial grid resolution.
-`x_max` (`Optional[float]`, default: `None`): Spatial domain maximum coordinate.
-`vhs_coeff` (`Optional[float]`, default: `None`): Collision kernel coefficient.
-`vhs_alpha` (`Optional[float]`, default: `None`): Exponent of relative velocity in the collision kernel.
-`quad_order_uniform` (`Optional[int]`, default: `None`): Quadrature order for angular integration.
-`quad_order_legendre` (`Optional[int]`, default: `None`): Quadrature order for radial Legendre integration.
-`dtype` (`Optional[torch.dtype]`, default: `None`): PyTorch tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dimension` (`int`): Dimension of the velocity domain (`2` or `3`).
+    `v_num_grid` (`int`): Number of grid points along each velocity dimension.
+    `v_max` (`float`): Maximum velocity value defining domain `[-v_max, v_max]^d`.
+    `x_num_grid` (`Optional[int]`, default: `None`): Spatial grid resolution.
+    `x_max` (`Optional[float]`, default: `None`): Spatial domain maximum coordinate.
+    `vhs_coeff` (`Optional[float]`, default: `None`): Collision kernel coefficient.
+    `vhs_alpha` (`Optional[float]`, default: `None`): Exponent of relative velocity in
+    the collision kernel.
+    `quad_order_uniform` (`Optional[int]`, default: `None`): Quadrature order for
+    angular integration.
+    `quad_order_legendre` (`Optional[int]`, default: `None`): Quadrature order for
+    radial Legendre integration.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): PyTorch tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`None`: None.
-"""
+    ## Returns
+    `None`: None.
+    """
     def __init__(
             self,
             dimension:           int,
@@ -540,20 +563,20 @@ def fft_index(
         dtype:  torch.dtype            = torch.long,
         device: Optional[torch.device] = None,
     ) -> torch.Tensor:
-    """## 1D discrete Fourier transform frequency indices
+    """Generate 1D discrete Fourier transform frequency indices.
 
-## Description
-Generates a 1-dimensional array of standard DFT frequency indices ordered as
-`[0, 1, ..., (n+1)//2 - 1, -(n//2), ..., -1]`.
+    ## Description
+    Generates a 1-dimensional array of standard DFT frequency indices ordered as
+    `[0, 1, ..., (n+1)//2 - 1, -(n//2), ..., -1]`.
 
-## Arguments
-`n` (`int`): Grid resolution.
-`dtype` (`torch.dtype`, default: `torch.long`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `n` (`int`): Grid resolution.
+    `dtype` (`torch.dtype`, default: `torch.long`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`torch.Tensor`: 1D tensor of frequency indices with shape `(n,)`.
-"""
+    ## Returns
+    `torch.Tensor`: 1D tensor of frequency indices with shape `(n,)`.
+    """
     return torch.cat(
         (
             torch.arange((n + 1) // 2, dtype=dtype, device=device),
@@ -565,25 +588,27 @@ Generates a 1-dimensional array of standard DFT frequency indices ordered as
 def freq_tensor(
         dimension: int,
         num_grid:  int,
-        keepdim:   bool                = False,
-        dtype:     torch.dtype         = torch.long,
-        device:    Optional[torch.device] = None,
+        keepdim:   bool                   = False,
+        dtype:     torch.dtype             = torch.long,
+        device:    Optional[torch.device]  = None,
     ) -> torch.Tensor:
-    """## Multidimensional discrete Fourier transform frequency tensor
+    """Construct the multidimensional DFT frequency tensor.
 
-## Description
-Constructs the full multidimensional grid of DFT frequency modes across all spatial velocity axes.
+    ## Description
+    Constructs the full multidimensional grid of DFT frequency modes across all spatial
+    velocity axes, with optional grid-shape retention.
 
-## Arguments
-`dimension` (`int`): Dimension of the frequency domain.
-`num_grid` (`int`): Number of grid points along each dimension.
-`keepdim` (`bool`, default: `False`): Whether to retain the grid shape `(*repeat(num_grid, dimension), dimension)`.
-`dtype` (`torch.dtype`, default: `torch.long`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dimension` (`int`): Dimension of the frequency domain.
+    `num_grid` (`int`): Number of grid points along each dimension.
+    `keepdim` (`bool`, default: `False`): Whether to retain the grid shape
+    `(*repeat(num_grid, dimension), dimension)`.
+    `dtype` (`torch.dtype`, default: `torch.long`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`torch.Tensor`: Multidimensional frequency tensor.
-"""
+    ## Returns
+    `torch.Tensor`: Multidimensional frequency tensor.
+    """
     idx_1d: torch.Tensor = fft_index(num_grid, dtype=dtype, device=device)
     freqs: torch.Tensor = torch.stack(
         torch.meshgrid(*(idx_1d for _ in range(dimension)), indexing='ij'),
@@ -599,20 +624,23 @@ def convolve_freqs(
         x2_fft: torch.Tensor,
         dim:    Optional[Sequence[int]] = None,
     ) -> torch.Tensor:
-    """## Convolution of frequency-domain signals via FFT
+    """Compute the convolution of two frequency-domain signals via inverse FFT.
 
-## Description
-Computes the convolution of two discrete Fourier transform representations by taking the inverse FFT,
-multiplying in physical space, and transforming back to frequency space with forward normalization.
+    ## Description
+    Computes the convolution of two DFT representations by taking the inverse FFT,
+    multiplying in physical space, and transforming back to frequency space with
+    forward normalization.
 
-## Arguments
-`x1_fft` (`torch.Tensor`): First frequency-domain tensor.
-`x2_fft` (`torch.Tensor`): Second frequency-domain tensor.
-`dim` (`Optional[Sequence[int]]`, default: `None`): Axes along which convolution is computed.
+    ## Arguments
+    `x1_fft` (`torch.Tensor`): First frequency-domain tensor.
+    `x2_fft` (`torch.Tensor`): Second frequency-domain tensor of the same shape as
+    `x1_fft`.
+    `dim` (`Optional[Sequence[int]]`, default: `None`): Axes along which convolution is
+    computed. Defaults to all axes.
 
-## Returns
-`torch.Tensor`: Convolved frequency-domain tensor matching input shape.
-"""
+    ## Returns
+    `torch.Tensor`: Convolved frequency-domain tensor matching input shape.
+    """
     if x1_fft.shape != x2_fft.shape:
         raise ValueError(f"Tensors must have matching shape, got x1={list(x1_fft.shape)} and x2={list(x2_fft.shape)}.")
     if dim is None:
@@ -631,22 +659,23 @@ def roots_legendre_shifted(
         dtype:  Optional[torch.dtype]  = None,
         device: Optional[torch.device] = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-    """## Shifted Gauss-Legendre quadrature nodes and weights
+    """Compute shifted Gauss-Legendre quadrature nodes and weights on `[a, b]`.
 
-## Description
-Computes the nodes and weights of the Gauss-Legendre quadrature shifted from the standard interval `[-1, 1]`
-to an arbitrary real interval `[a, b]`.
+    ## Description
+    Computes nodes and weights of the Gauss-Legendre quadrature shifted from the
+    standard interval `[-1, 1]` to an arbitrary real interval `[a, b]`.
 
-## Arguments
-`n` (`int`): Quadrature order (number of integration nodes).
-`a` (`float`): Lower bound of integration interval.
-`b` (`float`): Upper bound of integration interval.
-`dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `n` (`int`): Quadrature order (number of integration nodes).
+    `a` (`float`): Lower bound of integration interval.
+    `b` (`float`): Upper bound of integration interval.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`tuple[torch.Tensor, torch.Tensor]`: Tuple `(nodes, weights)` of 1D tensors of length `n`.
-"""
+    ## Returns
+    `tuple[torch.Tensor, torch.Tensor]`: Tuple `(nodes, weights)` of 1D tensors of
+    length `n`.
+    """
     if dtype is None:
         dtype = torch.get_default_dtype()
     if device is None:
@@ -658,17 +687,18 @@ to an arbitrary real interval `[a, b]`.
 
 
 def sinc(x: torch.Tensor) -> torch.Tensor:
-    """## Unnormalized cardinal sine function
+    """Compute the unnormalized cardinal sine `sin(x) / x`.
 
-## Description
-Computes the unnormalized cardinal sine `sin(x) / x` with removable singularity handled continuously such that `sinc(0) = 1`.
+    ## Description
+    Evaluates the unnormalized sinc function with the removable singularity at `x = 0`
+    handled continuously so that `sinc(0) = 1`.
 
-## Arguments
-`x` (`torch.Tensor`): Input coordinate tensor.
+    ## Arguments
+    `x` (`torch.Tensor`): Input coordinate tensor.
 
-## Returns
-`torch.Tensor`: Elementwise `sin(x) / x` tensor.
-"""
+    ## Returns
+    `torch.Tensor`: Elementwise `sin(x) / x` tensor.
+    """
     return torch.where(
         x != 0.0,
         torch.sin(x) / x,
@@ -682,20 +712,21 @@ def _fpl_character_2__weight_C(
         dtype:              Optional[torch.dtype]  = None,
         device:             Optional[torch.device] = None,
     ) -> torch.Tensor:
-    """## Angular weight function C for 2D Fokker-Planck-Landau kernel
+    """Compute the angular weight $C(x)$ for the 2D FPL characteristic function.
 
-## Description
-Evaluates the integral $C(x) = \\int_{0}^{2\\pi} \\cos(2t) \\cos(x \\cos(t)) \\, dt$ using Gauss-Legendre quadrature.
+    ## Description
+    Evaluates $C(x) = \\int_{0}^{2\\pi} \\cos(2t) \\cos(x \\cos(t))\\,dt$ using
+    Gauss-Legendre quadrature on $[0, 2\\pi]$.
 
-## Arguments
-`x` (`torch.Tensor`): Input radial-frequency coordinate tensor.
-`quad_order_uniform` (`int`): Number of integration quadrature nodes.
-`dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `x` (`torch.Tensor`): Input radial-frequency coordinate tensor.
+    `quad_order_uniform` (`int`): Number of integration quadrature nodes.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`torch.Tensor`: Evaluated angular weight integral tensor.
-"""
+    ## Returns
+    `torch.Tensor`: Evaluated angular weight integral tensor matching shape of `x`.
+    """
     if dtype is None:
         dtype = torch.get_default_dtype()
     if device is None:
@@ -715,22 +746,24 @@ def _fpl_character_2_3D__entry01_weight(
         dtype:              Optional[torch.dtype]  = None,
         device:             Optional[torch.device] = None,
     ) -> torch.Tensor:
-    """## Nondiagonal weight integral for 3D Fokker-Planck-Landau kernel
+    """Compute the off-diagonal angular weight for the 3D FPL gain tensor.
 
-## Description
-Computes the angular integration of $\\cos(a \\cos(t)) \\sin^3(t) C(b \\sin(t))$ on $[0, \\pi]$.
+    ## Description
+    Evaluates $\\int_0^\\pi \\cos(a\\cos t)\\sin^3(t)\\,C(b\\sin t)\\,dt$ using
+    Gauss-Legendre quadrature, corresponding to the off-diagonal entries of the 3D
+    FPL gain tensor $\\hat{G}_2$.
 
-## Arguments
-`a` (`torch.Tensor`): Coordinate tensor along z-axis.
-`b` (`torch.Tensor`): Coordinate tensor along xy-plane.
-`scale_factor` (`torch.Tensor`): Radial scaling factor tensor.
-`quad_order_uniform` (`int`): Number of quadrature nodes.
-`dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `a` (`torch.Tensor`): Coordinate tensor along the z-axis frequency direction.
+    `b` (`torch.Tensor`): Coordinate tensor along the xy-plane frequency direction.
+    `scale_factor` (`torch.Tensor`): Radial scaling factor tensor.
+    `quad_order_uniform` (`int`): Number of quadrature nodes.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`torch.Tensor`: Integrated weight tensor.
-"""
+    ## Returns
+    `torch.Tensor`: Integrated weight tensor.
+    """
     if dtype is None:
         dtype = torch.get_default_dtype()
     if device is None:
@@ -757,22 +790,24 @@ def _fpl_character_2_3D__entry22_weight(
         dtype:              Optional[torch.dtype]  = None,
         device:             Optional[torch.device] = None,
     ) -> torch.Tensor:
-    """## Diagonal weight integral for 3D Fokker-Planck-Landau kernel
+    """Compute the diagonal angular weight for the 3D FPL gain tensor.
 
-## Description
-Computes the angular integration of $\\cos(a \\cos(t)) \\cos^2(t) \\sin(t) J_0(b \\sin(t))$ on $[0, \\pi]$.
+    ## Description
+    Evaluates $\\int_0^\\pi \\cos(a\\cos t)\\cos^2(t)\\sin(t)\\,J_0(b\\sin t)\\,dt$ using
+    Gauss-Legendre quadrature, corresponding to the diagonal entries of the 3D FPL
+    gain tensor $\\hat{G}_2$.
 
-## Arguments
-`a` (`torch.Tensor`): Coordinate tensor along z-axis.
-`b` (`torch.Tensor`): Coordinate tensor along xy-plane.
-`scale_factor` (`torch.Tensor`): Radial scaling factor tensor.
-`quad_order_uniform` (`int`): Number of quadrature nodes.
-`dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `a` (`torch.Tensor`): Coordinate tensor along the z-axis frequency direction.
+    `b` (`torch.Tensor`): Coordinate tensor along the xy-plane frequency direction.
+    `scale_factor` (`torch.Tensor`): Radial scaling factor tensor.
+    `quad_order_uniform` (`int`): Number of quadrature nodes.
+    `dtype` (`Optional[torch.dtype]`, default: `None`): Tensor data type.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`torch.Tensor`: Integrated weight tensor.
-"""
+    ## Returns
+    `torch.Tensor`: Integrated weight tensor.
+    """
     if dtype is None:
         dtype = torch.get_default_dtype()
     if device is None:
@@ -789,3 +824,8 @@ Computes the angular integration of $\\cos(a \\cos(t)) \\cos^2(t) \\sin(t) J_0(b
     prod_3: torch.Tensor = j0(scaled_b[..., None] * torch.sin(t))
     integrand: torch.Tensor = prod_1 * prod_2 * prod_3
     return torch.sum(integrand * w, dim=-1)
+
+
+##################################################
+##################################################
+# End of file

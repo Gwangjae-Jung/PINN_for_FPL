@@ -7,24 +7,29 @@ from   utils  import FiniteDifferenceMethod
 __all__: list[str] = ['CNN_enc_dec', 'generate_operator_D', 'generate_operator_F', 'NeuralCollisionOperator']
 
 
+##################################################
+##################################################
 class CNN_enc_dec(nn.Module):
-    """## Convolutional encoder-decoder neural surrogate for collision sub-operators
+    """Convolutional encoder-decoder neural surrogate for FPL collision sub-operators.
 
-## Description
-Encoder-decoder convolutional network approximating the sub-operators $D(f)$ and $F(f)$
-at a fixed velocity grid resolution, following opPINN (Lee et al., JCP 2023).
+    ## Description
+    Encoder-decoder convolutional network that approximates the sub-operators $D(f)$
+    and $F(f)$ of the Fokker-Planck-Landau collision operator at a fixed velocity grid
+    resolution. Architecture follows opPINN (Lee et al., JCP 2023).
 
-## Arguments
-`dim` (`int`): Dimension of velocity space (`2` or `3`).
-`res` (`int`): Velocity grid resolution along each axis.
-`type_of_operator` (`str`): Type of operator being approximated (`'D'` or `'F'`).
-`encoder` (`Optional[nn.Sequential]`, default: `None`): Custom encoder network.
-`decoder` (`Optional[nn.Sequential]`, default: `None`): Custom decoder network.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dim` (`int`): Dimension of velocity space (`2` or `3`).
+    `res` (`int`): Velocity grid resolution along each axis.
+    `type_of_operator` (`str`): Sub-operator type being approximated (`'D'` or `'F'`).
+    `encoder` (`Optional[nn.Sequential]`, default: `None`): Custom encoder network.
+    If `None`, a default encoder is constructed via `_get_base_encoder`.
+    `decoder` (`Optional[nn.Sequential]`, default: `None`): Custom decoder network.
+    If `None`, a default decoder is constructed via `_get_base_decoder`.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`None`: None.
-"""
+    ## Returns
+    `None`: None.
+    """
     def __init__(
             self,
             dim:              int,
@@ -52,41 +57,49 @@ at a fixed velocity grid resolution, following opPINN (Lee et al., JCP 2023).
         return
 
     def forward(self, f: torch.Tensor) -> torch.Tensor:
-        """## Forward evaluation of encoder-decoder network
+        """Evaluate the encoder-decoder network on a distribution tensor.
 
-## Description
-Processes input distribution tensor through encoder, reshapes bottleneck representation, and passes through decoder.
+        ## Description
+        Passes the input through the encoder, reshapes the bottleneck feature map to
+        the expected spatial layout, then passes through the decoder to produce the
+        predicted sub-operator output.
 
-## Arguments
-`f` (`torch.Tensor`): Input distribution tensor of shape `(batch, 1, *domain)`.
+        ## Arguments
+        `f` (`torch.Tensor`): Input distribution tensor of shape `(batch, 1, *domain)`.
 
-## Returns
-`torch.Tensor`: Predicted operator tensor.
-"""
+        ## Returns
+        `torch.Tensor`: Predicted operator tensor with the same batch size as `f`.
+        """
         feat: torch.Tensor = self.encoder.forward(f)
         feat = feat.view(feat.shape[0], 64, *(self.__res // 16 for _ in range(self.__dim)))
         return self.decoder.forward(feat)
 
 
+##################################################
+##################################################
 class NeuralCollisionOperator():
-    """## Neural surrogate collision operator evaluator
+    """Neural surrogate collision operator for the Fokker-Planck-Landau equation.
 
-## Description
-Evaluates the surrogate Fokker-Planck-Landau collision operator using trained CNN encoder-decoder models
-`op_D` and `op_F` and central finite difference differentiation.
+    ## Description
+    Evaluates the surrogate FPL collision operator $Q(f)$ using two trained
+    CNN encoder-decoder networks (`op_D` approximating $D(f)$ and `op_F` approximating
+    $F(f)$) together with a central finite difference divergence computation.
 
-## Arguments
-`dimension` (`int`): Dimension of velocity space.
-`resolution` (`int`): Velocity resolution along each axis.
-`v_max` (`float`): Velocity cutoff bound defining `[-v_max, v_max]^d`.
-`op_D` (`torch.nn.Module`): Neural network approximating the diffusion operator $D(f)$.
-`op_F` (`torch.nn.Module`): Neural network approximating the drift operator $F(f)$.
-`coeff` (`float`, default: `1.0`): Multiplicative coefficient for the collision term.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dimension` (`int`): Dimension of velocity space.
+    `resolution` (`int`): Velocity resolution along each axis.
+    `v_max` (`float`): Velocity cutoff bound defining `[-v_max, v_max]^d`.
+    `op_D` (`torch.nn.Module`): Surrogate network approximating the diffusion operator
+    $D(f)$.
+    `op_F` (`torch.nn.Module`): Surrogate network approximating the drift operator
+    $F(f)$.
+    `coeff` (`float`, default: `1.0`): Multiplicative scaling coefficient applied to
+    the collision term output.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`None`: None.
-"""
+    ## Returns
+    `None`: None.
+    """
     def __init__(
             self,
             dimension:  int,
@@ -108,37 +121,46 @@ Evaluates the surrogate Fokker-Planck-Landau collision operator using trained CN
         self.op_F.eval()
         self.__coeff:    float                  = coeff
         self.__shape_tv: tuple[int, ...]        = tuple([-1, *(resolution for _ in range(dimension))])
-        self.__fdm:      FiniteDifferenceMethod = FiniteDifferenceMethod(dimension, 2.0 * v_max / resolution, device=device)
+        self.__fdm:      FiniteDifferenceMethod = FiniteDifferenceMethod(
+            dimension, 2.0 * v_max / resolution, device=device,
+        )
         return
 
     def forward(self, f: torch.Tensor, grad_f: torch.Tensor) -> torch.Tensor:
-        """## Evaluate neural surrogate collision operator
+        """Evaluate the surrogate collision operator $Q(f)$.
 
-## Description
-Computes the collision operator $Q(f)$ using predicted sub-operators $D(f)$ and $F(f)$ and finite difference divergence.
+        ## Description
+        Uses the surrogate sub-operators $D(f)$ and $F(f)$ together with the supplied
+        velocity gradient `grad_f` to compute the divergence form of the Landau
+        collision operator via central finite differences.
 
-## Arguments
-`f` (`torch.Tensor`): Tensor of shape `(num_points, 1)` aligned in `ij`-indexing style.
-`grad_f` (`torch.Tensor`): Spatial gradient tensor of shape `(num_points, dimension)` excluding temporal derivative.
+        ## Arguments
+        `f` (`torch.Tensor`): Distribution tensor of shape `(num_points, 1)` arranged
+        in `ij`-indexing style over the velocity grid.
+        `grad_f` (`torch.Tensor`): Velocity gradient tensor of shape
+        `(num_points, dimension)` (excluding the temporal derivative).
 
-## Returns
-`torch.Tensor`: Evaluated collision operator tensor matching shape of `f`.
-"""
-        old_shape: torch.Size = f.shape
-        dim: int = self.__dim
-        res: int = self.__res
-        f_reshaped: torch.Tensor = f.reshape(self.__shape_tv)
+        ## Returns
+        `torch.Tensor`: Evaluated collision operator tensor matching the shape of `f`.
+        """
+        old_shape: torch.Size    = f.shape
+        dim: int                 = self.__dim
+        res: int                 = self.__res
+        f_reshaped:      torch.Tensor = f.reshape(self.__shape_tv)
         grad_f_reshaped: torch.Tensor = grad_f.reshape(*(f_reshaped.shape), dim)
 
+        # Evaluate both surrogate sub-operators and reshape to grid layout
         df_pred: torch.Tensor = self.op_D.forward(f_reshaped[:, None])
         ff_pred: torch.Tensor = self.op_F.forward(f_reshaped[:, None])
         df_pred = df_pred.reshape(-1, dim, dim, *(res for _ in range(dim)))
         ff_pred = ff_pred.reshape(-1, dim, *(res for _ in range(dim)))
 
+        # Compute per-axis flux: D(f) * grad_f - F(f) * f
         operands: list[torch.Tensor] = [
             torch.einsum("tj..., t...j -> t...", df_pred[:, d], grad_f_reshaped) - ff_pred[:, d] * f_reshaped
             for d in range(dim)
         ]
+        # Compute divergence via finite differences and sum over axes
         diff_operands: list[torch.Tensor] = [
             self.__fdm.compute_derivative(op, idx)
             for idx, op in enumerate(operands)
@@ -149,13 +171,27 @@ Computes the collision operator $Q(f)$ using predicted sub-operators $D(f)$ and 
 
 ##################################################
 def _get_base_encoder(dim: int, res: int) -> nn.Sequential:
+    """Construct the default convolutional encoder for `CNN_enc_dec`.
+
+    ## Description
+    Builds a four-block strided convolutional encoder followed by a linear projection.
+    The encoder progressively halves the spatial resolution by a factor of 16 total
+    (two stride-2 blocks for 2D and 3D).
+
+    ## Arguments
+    `dim` (`int`): Spatial dimension (`2` or `3`).
+    `res` (`int`): Input velocity grid resolution along each axis.
+
+    ## Returns
+    `nn.Sequential`: Encoder network.
+    """
     cfg_encoder: dict[str, int] = {'kernel_size': 5, 'stride': 2, 'padding': 2}
     conv: type = getattr(nn, f'Conv{dim}d')
     if dim in (2, 3):
         return nn.Sequential(
-            conv(1, 8, **cfg_encoder),
+            conv(1,  8,  **cfg_encoder),
             nn.ReLU(),
-            conv(8, 16, **cfg_encoder),
+            conv(8,  16, **cfg_encoder),
             nn.ReLU(),
             conv(16, 32, **cfg_encoder),
             nn.ReLU(),
@@ -168,8 +204,25 @@ def _get_base_encoder(dim: int, res: int) -> nn.Sequential:
 
 
 def _get_base_decoder(dim: int, type_of_operator: str) -> nn.Sequential:
-    cfg_decoder: dict[str, int] = {'kernel_size': 5, 'padding': 2}
-    cfg_upscale: dict[str, object] = {'mode': 'bilinear' if dim == 2 else 'trilinear', 'align_corners': True}
+    """Construct the default convolutional decoder for `CNN_enc_dec`.
+
+    ## Description
+    Builds an upsampling transposed-convolutional decoder whose output channel count
+    depends on the sub-operator type (`'D'` for the matrix $D(f)$, `'F'` for the
+    vector $F(f)$).
+
+    ## Arguments
+    `dim` (`int`): Spatial dimension (`2` or `3`).
+    `type_of_operator` (`str`): Sub-operator type (`'D'` or `'F'`).
+
+    ## Returns
+    `nn.Sequential`: Decoder network.
+    """
+    cfg_decoder: dict[str, int]    = {'kernel_size': 5, 'padding': 2}
+    cfg_upscale: dict[str, object] = {
+        'mode':          'bilinear' if dim == 2 else 'trilinear',
+        'align_corners': True,
+    }
     deconv: type = getattr(nn, f'ConvTranspose{dim}d')
     if dim == 2:
         decoder: nn.Sequential = nn.Sequential(
@@ -185,10 +238,10 @@ def _get_base_decoder(dim: int, type_of_operator: str) -> nn.Sequential:
             deconv(8, 4, **cfg_decoder),
         )
         if type_of_operator == 'D':
-            return decoder
+            return decoder                      # Output channels: 4 = dim^2 (D is d x d matrix)
         elif type_of_operator == 'F':
             decoder.append(nn.ReLU())
-            decoder.append(deconv(4, 2, **cfg_decoder))
+            decoder.append(deconv(4, 2, **cfg_decoder))  # Output channels: 2 = dim (F is a vector)
             return decoder
         raise ValueError(f"Operator type '{type_of_operator}' is not recognized.")
     elif dim == 3:
@@ -200,7 +253,7 @@ def _get_base_decoder(dim: int, type_of_operator: str) -> nn.Sequential:
                 deconv(32, 16, **cfg_decoder),
                 nn.ReLU(),
                 nn.Upsample(scale_factor=4, **cfg_upscale),
-                deconv(16, 9, **cfg_decoder),
+                deconv(16, 9, **cfg_decoder),   # Output channels: 9 = dim^2
             )
         elif type_of_operator == 'F':
             return nn.Sequential(
@@ -213,41 +266,49 @@ def _get_base_decoder(dim: int, type_of_operator: str) -> nn.Sequential:
                 deconv(16, 8, **cfg_decoder),
                 nn.ReLU(),
                 nn.Upsample(scale_factor=2, **cfg_upscale),
-                deconv(8, 3, **cfg_decoder),
+                deconv(8, 3, **cfg_decoder),    # Output channels: 3 = dim
             )
         raise ValueError(f"Operator type '{type_of_operator}' is not recognized.")
     raise NotImplementedError(f"Dimension {dim} is not supported.")
 
 
+##################################################
 def generate_operator_D(dim: int, res: int, device: Optional[torch.device] = None) -> CNN_enc_dec:
-    """## Instantiate D-operator surrogate model
+    """Instantiate a surrogate model for the diffusion sub-operator $D(f)$.
 
-## Description
-Instantiates a `CNN_enc_dec` model configured to approximate the diffusion sub-operator $D(f)$.
+    ## Description
+    Constructs a `CNN_enc_dec` model configured to approximate the matrix-valued
+    diffusion sub-operator $D(f)$ of the Fokker-Planck-Landau collision operator.
 
-## Arguments
-`dim` (`int`): Dimension of velocity space.
-`res` (`int`): Velocity grid resolution.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dim` (`int`): Dimension of velocity space.
+    `res` (`int`): Velocity grid resolution along each axis.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`CNN_enc_dec`: Initialized surrogate model for $D(f)$.
-"""
+    ## Returns
+    `CNN_enc_dec`: Initialized surrogate model for $D(f)$.
+    """
     return CNN_enc_dec(dim, res, type_of_operator='D', device=device)
 
 
 def generate_operator_F(dim: int, res: int, device: Optional[torch.device] = None) -> CNN_enc_dec:
-    """## Instantiate F-operator surrogate model
+    """Instantiate a surrogate model for the drift sub-operator $F(f)$.
 
-## Description
-Instantiates a `CNN_enc_dec` model configured to approximate the drift sub-operator $F(f)$.
+    ## Description
+    Constructs a `CNN_enc_dec` model configured to approximate the vector-valued
+    drift sub-operator $F(f)$ of the Fokker-Planck-Landau collision operator.
 
-## Arguments
-`dim` (`int`): Dimension of velocity space.
-`res` (`int`): Velocity grid resolution.
-`device` (`Optional[torch.device]`, default: `None`): Target computing device.
+    ## Arguments
+    `dim` (`int`): Dimension of velocity space.
+    `res` (`int`): Velocity grid resolution along each axis.
+    `device` (`Optional[torch.device]`, default: `None`): Target computing device.
 
-## Returns
-`CNN_enc_dec`: Initialized surrogate model for $F(f)$.
-"""
+    ## Returns
+    `CNN_enc_dec`: Initialized surrogate model for $F(f)$.
+    """
     return CNN_enc_dec(dim, res, type_of_operator='F', device=device)
+
+
+##################################################
+##################################################
+# End of file
