@@ -1,4 +1,4 @@
-from   typing import Optional
+from   typing import Literal, Optional
 import torch
 from   torch  import nn
 from   utils  import FiniteDifferenceMethod
@@ -34,7 +34,7 @@ class CNN_enc_dec(nn.Module):
             self,
             dim:              int,
             res:              int,
-            type_of_operator: str,
+            type_of_operator: Literal['D', 'F'],
             encoder:          Optional[nn.Sequential] = None,
             decoder:          Optional[nn.Sequential] = None,
             device:           Optional[torch.device]  = None,
@@ -75,7 +75,6 @@ class CNN_enc_dec(nn.Module):
         return self.decoder.forward(feat)
 
 
-##################################################
 ##################################################
 class NeuralCollisionOperator():
     """Neural surrogate collision operator for the Fokker-Planck-Landau equation.
@@ -309,6 +308,5 @@ def generate_operator_F(dim: int, res: int, device: Optional[torch.device] = Non
     return CNN_enc_dec(dim, res, type_of_operator='F', device=device)
 
 
-##################################################
 ##################################################
 # End of file

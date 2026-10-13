@@ -1,30 +1,10 @@
-CUDA_INDEX__PINN=2
-CUDA_INDEX__OPPINN=3
+#!/bin/bash
 
-for SEED in 0 1 2 3 4
-do
-    gamma=0.0
-    current_work__pinn=$(printf "Training PINN for seed %d and gamma %.1f" "$SEED" "$gamma")
-    current_work__oppinn=$(printf "Training opPINN for seed %d and gamma %.1f" "$SEED" "$gamma")
-    path_config=$(printf "config/config__2d__gamma%.1f__maxwellian.yaml" "$gamma")
-    output_pinn=$(printf "output__pinn2d__maxwellian__seed%d.log" "$SEED")
-    output_oppinn=$(printf "output__oppinn2d__maxwellian__seed%d.log" "$SEED")
-    echo $path_config
-    echo $current_work__pinn
-    nohup python run_train.py \
-        --cuda_index $CUDA_INDEX__OPPINN \
-        --dim 2 \
-        --seed $SEED \
-        --path_config $path_config &
-    echo $current_work__oppinn
-    nohup python run_train.py \
-        --cuda_index $CUDA_INDEX__PINN \
-        --dim 2 \
-        --seed $SEED \
-        --path_config $path_config \
-        --surrogate &
-    wait
-    # Wait until both models are trained
-done
+# Configuration
+TARGET="maxwellian"
+MODEL="${1:-oppinn}"
+shift 2>/dev/null || true
 
-echo "All jobs submitted!"
+# Execute common experiment runner
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "${SCRIPT_DIR}/run_experiments__common.sh" --target "$TARGET" --model "$MODEL" "$@"
