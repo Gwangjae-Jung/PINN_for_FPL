@@ -90,7 +90,7 @@ case "$NORMALIZED_TARGET" in
         for SEED in "${SEEDS[@]}"; do
             for gamma in "${GAMMAS[@]}"; do
                 current_work=$(printf "Training %s for seed %d and gamma %.1f" "$MODEL_NAME" "$SEED" "$gamma")
-                path_config=$(printf "config/config__2d__gamma%.1f__bimaxwellian.yaml" "$gamma")
+                path_config=$(printf "../config/config__2d__gamma%.1f__bimaxwellian.yaml" "$gamma")
                 output_log=$(printf "output__%s2d__gamma%.1f__seed%d.log" "$MODEL_TAG" "$gamma" "$SEED")
 
                 echo "$path_config"
@@ -113,7 +113,7 @@ case "$NORMALIZED_TARGET" in
         gamma="0.0"
         for SEED in "${SEEDS[@]}"; do
             current_work=$(printf "Training %s for seed %d and gamma %.1f" "$MODEL_NAME" "$SEED" "$gamma")
-            path_config=$(printf "config/config__2d__gamma%.1f__bkw.yaml" "$gamma")
+            path_config=$(printf "../config/config__2d__gamma%.1f__bkw.yaml" "$gamma")
             output_log=$(printf "output__%s2d__bkw__seed%d.log" "$MODEL_TAG" "$SEED")
 
             echo "$path_config"
@@ -135,7 +135,7 @@ case "$NORMALIZED_TARGET" in
         gamma="0.0"
         for SEED in "${SEEDS[@]}"; do
             current_work=$(printf "Training %s for seed %d and gamma %.1f" "$MODEL_NAME" "$SEED" "$gamma")
-            path_config=$(printf "config/config__2d__gamma%.1f__maxwellian.yaml" "$gamma")
+            path_config=$(printf "../config/config__2d__gamma%.1f__maxwellian.yaml" "$gamma")
             output_log=$(printf "output__%s2d__maxwellian__seed%d.log" "$MODEL_TAG" "$SEED")
 
             echo "$path_config"

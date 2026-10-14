@@ -3,7 +3,6 @@
 
 ### Custom ###
 result__fixed_t/**/*.pth
-!result__fixed_t/**/train_history.log
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
@@ -262,8 +261,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-<<<<<<< HEAD
+### Exceptions ###
+!result__fixed_t/**/train_history.log
+
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,jupyternotebooks,python
-=======
-# End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,python,jupyternotebooks
->>>>>>> e02f715099e234eb57e7495326ab1508246f392d
