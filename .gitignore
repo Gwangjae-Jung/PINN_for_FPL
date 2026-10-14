@@ -2,7 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,linux,macos,jupyternotebooks,python
 
 ### Custom ###
-result__fixed_t/
+result__fixed_t/**/*.pth
+!result__fixed_t/**/train_history.log
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
