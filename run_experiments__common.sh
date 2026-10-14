@@ -64,13 +64,13 @@ case "$NORMALIZED_MODEL" in
         MODEL_NAME="opPINN"
         MODEL_TAG="oppinn"
         EXTRA_ARGS="--surrogate"
-        DEFAULT_CUDA=3
+        DEFAULT_CUDA=1
         ;;
     specpinn|pinn)
         MODEL_NAME="specPINN"
         MODEL_TAG="pinn"
         EXTRA_ARGS=""
-        DEFAULT_CUDA=2
+        DEFAULT_CUDA=0
         ;;
     *)
         echo "Error: Unknown model '$MODEL'. Available options: oppinn, specpinn"

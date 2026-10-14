@@ -2,11 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,linux,macos,jupyternotebooks,python
 
 ### Custom ###
-solutions
-pretrained_operators__density_1.0
-result/numerical**/**.pth
-**/**.ipynb
-**inference**.pth
+result__fixed_t/
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
