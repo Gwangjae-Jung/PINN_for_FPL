@@ -3,6 +3,9 @@
 
 ### Custom ###
 result__fixed_t/**/*.pth
+papers/
+separable-PI-DeepONet/
+deep_numerical/
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
